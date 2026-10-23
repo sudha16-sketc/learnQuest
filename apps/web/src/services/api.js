@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const DEFAULT_TIMEOUT_MS = 25000;
 
 class ApiService {
   constructor() {
@@ -19,29 +20,51 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     const headers = {
       'Content-Type': 'application/json',
       ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      ...options.headers
+      ...fetchOptions.headers
     };
 
-    const config = {
-      ...options,
-      headers
-    };
+    try {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...fetchOptions,
+        headers,
+        signal: fetchOptions.signal || controller.signal
+      });
 
-    const res = await fetch(url, config);
-    const data = await res.json();
+      const raw = await res.text();
+      let data = null;
+      if (raw) {
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          throw new Error(`Unexpected non-JSON response from server (HTTP ${res.status})`);
+        }
+      }
 
-    if (!res.ok) {
-      throw new Error(data.error || `HTTP error ${res.status}`);
+      if (!res.ok) {
+        const message = data?.error || data?.message || `HTTP error ${res.status}`;
+        const error = new Error(message);
+        error.status = res.status;
+        throw error;
+      }
+
+      return data ?? {};
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('Request timed out. Please check your connection and try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return data;
   }
 
-  // Auth
   async register(email, username, password) {
     const data = await this.request('/api/auth/register', {
       method: 'POST',
@@ -78,7 +101,6 @@ class ApiService {
     });
   }
 
-  // Learning
   async getTopics() {
     return this.request('/api/topics');
   }
@@ -110,11 +132,15 @@ class ApiService {
     return this.request('/api/learning/progress');
   }
 
-  // AI
-  async generateQuestions(topic, difficulty, count = 3) {
+  async getAIStatus() {
+    return this.request('/api/ai/status');
+  }
+
+  async generateQuestions(topic, difficulty, count = 4) {
     return this.request('/api/ai/questions', {
       method: 'POST',
-      body: JSON.stringify({ topic, difficulty, count })
+      body: JSON.stringify({ topic, difficulty, count }),
+      timeoutMs: 30000
     });
   }
 
@@ -125,7 +151,13 @@ class ApiService {
     });
   }
 
-  // Rewards
+  async generateRemedial(concept, difficulty = 'beginner') {
+    return this.request('/api/ai/remedial', {
+      method: 'POST',
+      body: JSON.stringify({ concept, difficulty })
+    });
+  }
+
   async getRewardBalance() {
     return this.request('/api/rewards/balance');
   }
@@ -145,7 +177,6 @@ class ApiService {
     });
   }
 
-  // Store
   async getStoreItems() {
     return this.request('/api/store/items');
   }
@@ -164,7 +195,6 @@ class ApiService {
     });
   }
 
-  // Blockchain
   async getBlockchainConfig() {
     return this.request('/api/blockchain/config');
   }

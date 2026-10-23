@@ -72,7 +72,10 @@ export class BlockchainVerifier {
         ["function balanceOf(address) view returns (uint256)"],
         this.provider
       );
-      const balance = await tokenContract.balanceOf(walletAddress);
+      const balance = await Promise.race([
+        tokenContract.balanceOf(walletAddress),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('RPC balance lookup timed out')), 5000))
+      ]);
       return ethers.formatEther(balance);
     } catch (err) {
       return '0.0';

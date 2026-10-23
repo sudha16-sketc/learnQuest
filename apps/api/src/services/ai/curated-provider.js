@@ -186,7 +186,7 @@ export class CuratedProvider extends IAIProvider {
     const match = pool.find(q => q.concept === concept) || pool[0];
     return {
       ...match,
-      id: `${match.id}-remedial`,
+      id: `${match.id}-remedial-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       question: `[Retry Opportunity] ${match.question}`
     };
   }

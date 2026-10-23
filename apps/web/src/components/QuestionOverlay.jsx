@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import {
-  HelpCircle,
   CheckCircle2,
   XCircle,
   Lightbulb,
@@ -27,10 +26,19 @@ export function QuestionOverlay({
   const [hintVisible, setHintVisible] = useState(false);
   const [hintText, setHintText] = useState(question.hint || '');
   const [hintsUsedCount, setHintsUsedCount] = useState(0);
-  const [result, setResult] = useState(null); // { isCorrect, xpAwarded, tokensEntitled, explanation, keyTakeaway }
+  const [result, setResult] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
 
-  // GSAP Entrance Animation
+  // Reset all per-question state whenever a new question is served.
   useEffect(() => {
+    setSelectedOption(null);
+    setIsSubmitting(false);
+    setHintVisible(false);
+    setHintText(question.hint || '');
+    setHintsUsedCount(0);
+    setResult(null);
+    setSubmitError(null);
+
     if (cardRef.current) {
       gsap.fromTo(
         cardRef.current,
@@ -38,7 +46,7 @@ export function QuestionOverlay({
         { scale: 1, opacity: 1, y: 0, duration: 0.45, ease: 'back.out(1.5)' }
       );
     }
-  }, [question]);
+  }, [question.id]);
 
   const handleUseHint = async () => {
     if (hintVisible) return;
@@ -60,6 +68,7 @@ export function QuestionOverlay({
   const handleSubmit = async () => {
     if (selectedOption === null || isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       const response = await onSubmitAnswer({
@@ -80,7 +89,7 @@ export function QuestionOverlay({
         );
       }
     } catch (err) {
-      console.error('Submit error:', err);
+      setSubmitError(err.message || 'Could not submit your answer. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -145,9 +154,9 @@ export function QuestionOverlay({
             let optionStyles = 'bg-slate-900/60 border-slate-700/60 text-slate-200 hover:bg-slate-800/80 hover:border-indigo-500/50';
 
             if (result) {
-              if (idx === 0) { // Verified correct option is index 0
+              if (idx === result.correctOptionIndex) {
                 optionStyles = 'bg-emerald-950/70 border-emerald-500 text-emerald-200';
-              } else if (isSelected && !result.isCorrect) {
+              } else if (isSelected) {
                 optionStyles = 'bg-rose-950/70 border-rose-500 text-rose-200';
               } else {
                 optionStyles = 'bg-slate-900/30 border-slate-800 text-slate-500 opacity-60';
@@ -188,7 +197,7 @@ export function QuestionOverlay({
                   <span>Brilliant! That's correct.</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  {question.explanation}
+                  {result.explanation || question.explanation}
                 </p>
                 <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-800 text-xs">
                   <div className="flex items-center gap-1 font-bold text-amber-400">
@@ -217,6 +226,12 @@ export function QuestionOverlay({
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {submitError && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs">
+            {submitError}
           </div>
         )}
 

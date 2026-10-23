@@ -11,7 +11,7 @@ graph TD
 
     subgraph BackendServices["Shared Backend API"]
         API["Express.js REST API (Port 4000)"]
-        AI["AI Provider Engine (Ollama + Curated)"]
+        AI["AI Provider Engine (Google Gemini + Curated Fallback)"]
         VoucherService["EIP-712 Voucher Signer"]
         TxVerifier["MST Blockchain Receipt Verifier"]
     end
@@ -38,7 +38,7 @@ graph TD
     TxVerifier -->|JSON-RPC| BlockchainNetwork
 
     Web -->|MetaMask Ext| BlockchainNetwork
-    Mobile -->|MetaMask Mobile Deep Link| BlockchainNetwork
+    Mobile -->|Wallet linking/claiming via web| BlockchainNetwork
 ```
 
 ---
@@ -59,7 +59,7 @@ learnquest/
   contracts/              # Hardhat, Solidity 0.8.24, OpenZeppelin 5.2, Tests
   prisma/
     schema.prisma         # Normalized database models & relationships
-  docs/                   # Architecture, MST Blockchain, Ollama, EAS Build guides
+  docs/                   # Architecture, MST Blockchain, Gemini, EAS Build guides
   docker-compose.yml      # PostgreSQL and API container definitions
   .env.example            # Environment variables template
   package.json            # Monorepo npm workspaces definition

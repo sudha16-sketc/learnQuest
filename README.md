@@ -3,23 +3,23 @@
 
 [![MST Blockchain](https://img.shields.io/badge/MST%20Blockchain-Testnet%20Verified-blue.svg)](https://testnet.mstscan.com)
 [![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-Contracts%20v5.2-green.svg)](https://openzeppelin.com)
-[![Ollama](https://img.shields.io/badge/AI%20Engine-Ollama%20Local%20Inference-orange.svg)](https://ollama.com)
+[![Google Gemini](https://img.shields.io/badge/AI%20Engine-Google%20Gemini-4285F4.svg)](https://ai.google.dev)
 [![React Three Fiber](https://img.shields.io/badge/3D%20Rendering-Three.js%20%2B%20R3F-purple.svg)](https://docs.pmnd.rs/react-three-fiber)
 [![Expo](https://img.shields.io/badge/Mobile-Expo%20SDK%2051-black.svg)](https://expo.dev)
 
-LearnQuest transforms computer science and blockchain education into an interactive 3D adventure. Players navigate procedural floating islands, jump across moving platforms, collect XP orbs, solve AI-crafted challenges at knowledge beacons, and claim verifiable ERC-20 utility tokens (`LQST`) on the **MST Blockchain**.
+LearnQuest transforms computer science and blockchain education into an interactive 3D adventure. Players navigate procedural floating islands, jump across moving platforms, solve AI-crafted challenges at knowledge beacons, and claim verifiable ERC-20 utility tokens (`LQST`) on the **MST Blockchain**.
 
 ---
 
 ## 🚀 Key Features
 
 - **Playable 3D Adventure:** Controllable explorer with jump physics, collision detection, fall recovery respawns, procedural floating islands, knowledge checkpoints, and exit mastery portals.
-- **Adaptive AI Engine:** Powered by local **Ollama** inference (`qwen2.5:3b`) with strict JSON schema runtime validation and an automatic curated curriculum fallback with zero fabricated output.
+- **Adaptive AI Engine:** Backend-only **Google Gemini** inference via `@google/genai`, strict JSON schema runtime validation, server-side answer keys, bounded retries/timeouts, and an automatic verified curated-curriculum fallback.
 - **MST Blockchain Integration:** Verified EVM testnet integration (Chain ID: `91562037`, RPC: `https://testnetrpc.mstblockchain.com`) with OpenZeppelin smart contracts.
 - **Dual-Token Reward Economy:** Clean separation between off-chain durable Gameplay XP and on-chain Utility Tokens (`LQST`), protected by cryptographic **EIP-712** signed reward vouchers.
 - **Cosmetics & Store:** Token-priced in-game store featuring Cyber Neon Auras, Cosmic Scholar Hats, and Stardust Jump Trails that visibly render on your 3D explorer.
 - **Cross-Platform:** Shared Express API backend powering both the React Web app and the Expo React Native mobile app.
-- **EAS Android APK & AAB Builds:** Expo EAS configuration generating standalone `.apk` files for direct testing on physical Android devices and `.aab` bundles for Google Play Store publishing.
+- **Expo Android Build Config:** EAS profiles for `.apk` and `.aab` output. Building requires an authenticated Expo account and an EAS project ID.
 
 ---
 
@@ -39,7 +39,7 @@ learnquest/
   contracts/              # Hardhat, Solidity 0.8.24, OpenZeppelin 5.2, Tests
   prisma/
     schema.prisma         # Normalized database models & relationships
-  docs/                   # Architecture, MST Blockchain, Ollama, EAS Build guides
+  docs/                   # Architecture, MST Blockchain, Gemini, EAS Build guides
   docker-compose.yml      # PostgreSQL and API container definitions
   .env.example            # Environment variables template
   package.json            # Monorepo npm workspaces definition
@@ -100,13 +100,19 @@ npm --workspace=@learnquest/contracts run compile
 npm --workspace=@learnquest/contracts run test
 ```
 
-### 4. Setup Ollama (Local AI Inference)
+### 4. Configure Google Gemini (Backend AI)
 
-```bash
-# In a separate terminal
-ollama serve
-ollama pull qwen2.5:3b
+Create a Gemini API key at [Google AI Studio](https://aistudio.google.com/apikey) and set it in the root `.env`:
+
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your_google_gemini_api_key
+GEMINI_MODEL=gemini-3.8-flash
 ```
+
+Never place the key in a `VITE_*` or `EXPO_PUBLIC_*` variable. See [`docs/GEMINI_AI.md`](docs/GEMINI_AI.md). If no key is configured, the API automatically serves the verified curated curriculum and marks responses as degraded.
+
+For the Android emulator, set `EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:4000`. For a physical Android device, use your computer's LAN IP instead of `localhost`.
 
 ### 5. Launch Full Stack Services
 
@@ -127,7 +133,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📱 Mobile Build Instructions (Expo EAS)
 
-Detailed guide available at [`docs/MOBILE_EAS_BUILD.md`](docs/MOBILE_EAS_BUILD.md).
+Detailed guide available at [`docs/MOBILE_EAS_BUILD.md`](docs/MOBILE_EAS_BUILD.md). You must run `eas login` and configure an EAS project ID before these commands can produce artifacts.
 
 ### 1. Generate Installable Android APK (Direct Physical Device Testing)
 
@@ -151,11 +157,13 @@ eas build -p android --profile production
 | Component | Test Suite | Result | Evidence |
 |---|---|---|---|
 | **Smart Contracts** | Hardhat Unit Tests | **PASS** | 11/11 tests passing (Token, Rewards EIP-712, Store, Achievements) |
-| **API Endpoints** | Node Test Runner | **PASS** | 11/11 integration tests passing (Auth, Sessions, AI, Ledger, Config) |
-| **AI Inference** | Ollama & Curated Fallback | **PASS** | Valid structured JSON questions with concept schemas |
-| **3D Game** | React Three Fiber Canvas | **PASS** | Player physics, collision, jumping, checkpoints, fall recovery |
-| **MetaMask Web3** | EIP-712 & Contracts | **PASS** | Network detection, chain switching, voucher claim execution |
-| **EAS Config** | APK & AAB Profiles | **PASS** | `preview` (APK) and `production` (AAB) in `eas.json` |
+| **API + AI Provider** | Node Test Runner | **PASS** | 30 tests passing, including auth, sessions, answer verification, idempotency, rewards, wallet linking, and mocked Gemini provider behavior |
+| **Curated AI Fallback** | Node Test Runner | **PASS** | Degraded responses are labeled `curated_curriculum` with answer keys held server-side |
+| **Live Gemini Inference** | Real API call | **NOT RUN** | Requires a valid `GEMINI_API_KEY`, which is not present in this environment |
+| **Web Production Build** | Vite | **PASS** | `npm run build:web` succeeds (large-chunk warning only) |
+| **Mobile Android Bundle** | Expo/Metro | **PASS** | `npx expo export --platform android` succeeds; native APK/AAB not built here |
+| **MetaMask / On-Chain Claims** | Live wallet + MST RPC | **NOT RUN** | Requires a funded browser wallet and deployed contracts |
+| **EAS APK/AAB Build** | EAS Build | **NOT RUN** | Requires Expo login, EAS project ID, and build credentials |
 
 ---
 

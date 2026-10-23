@@ -29,7 +29,7 @@ export function LandingScreen({ onStart, onOpenAuth }) {
             className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-3 transition-all hover:scale-105"
           >
             <Play className="w-5 h-5 fill-current" />
-            <span>Play 3D Demo Now</span>
+            <span>Start Learning</span>
           </button>
 
           <button
@@ -52,7 +52,7 @@ export function LandingScreen({ onStart, onOpenAuth }) {
             Adaptive AI Learning
           </h3>
           <p className="text-xs text-slate-300 leading-relaxed">
-            Powered by Ollama inference with structured JSON generation. Experience our failure-recovery loop: Attempt, Diagnose, Explain, Retry, and Master.
+            Powered by Google Gemini with schema-validated JSON generation and a verified curated fallback. Experience our failure-recovery loop: Attempt, Diagnose, Explain, Retry, and Master.
           </p>
         </div>
 

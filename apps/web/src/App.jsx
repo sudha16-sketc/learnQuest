@@ -20,7 +20,7 @@ import { useAuth } from './context/AuthContext';
 import { useWeb3 } from './context/Web3Context';
 
 export function App() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { account } = useWeb3();
 
   // Explicit Game State
@@ -38,6 +38,7 @@ export function App() {
   const [pendingTokens, setPendingTokens] = useState('0.00');
   const [checkpointsSolved, setCheckpointsSolved] = useState(new Set());
   const [respawnAlert, setRespawnAlert] = useState(false);
+  const [gameError, setGameError] = useState(null);
 
   // Active Modals
   const [isStoreOpen, setIsStoreOpen] = useState(false);
@@ -73,36 +74,57 @@ export function App() {
     refreshUserData();
   }, [user, account]);
 
+  useEffect(() => {
+    if (user) setGameError(null);
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && !user && gameState === GAME_STATES.TOPIC_SELECTION) {
+      setGameState(GAME_STATES.MENU);
+      setIsAuthOpen(true);
+    }
+  }, [authLoading, user, gameState]);
+
   // Start Level
   const startLevel = async (topicSlug = 'blockchain-fundamentals', levelNum = 1, difficulty = 'beginner') => {
+    if (!user) {
+      setGameError('Sign in to start a learning expedition and save your progress.');
+      setIsAuthOpen(true);
+      return;
+    }
+
     setGameState(GAME_STATES.LOADING_QUESTIONS);
     setCurrentLevelNumber(levelNum);
     setCheckpointsSolved(new Set());
+    setCurrentQuestionIndex(0);
+    setQuestions([]);
+    setActiveSessionId(null);
+    setGameError(null);
 
-    // Generate fresh course platforms and orbs
     const newCourse = generateLevelCourse(levelNum, 5);
     setCourseData(newCourse);
 
     try {
-      // 1. Start learning session on backend
-      let sessId = `session-${Date.now()}`;
-      try {
-        const sessRes = await api.startSession(topicSlug, difficulty);
-        if (sessRes.success) sessId = sessRes.session.id;
-      } catch (e) {
-        console.warn('Session offline fallback');
+      const sessRes = await api.startSession(topicSlug, difficulty);
+      if (!sessRes?.success || !sessRes.session?.id) {
+        throw new Error('Could not start a learning session on the server.');
       }
-      setActiveSessionId(sessId);
+      setActiveSessionId(sessRes.session.id);
 
-      // 2. Generate questions via AI service
       const qRes = await api.generateQuestions('Blockchain Fundamentals', difficulty, 4);
-      if (qRes.success && qRes.data?.questions?.length) {
-        setQuestions(qRes.data.questions);
+      if (!qRes?.success || !qRes.data?.questions?.length) {
+        throw new Error('No verified questions were returned by the learning service.');
       }
+
+      setQuestions(qRes.data.questions);
+      if (qRes.data.degraded) {
+        setGameError('Gemini is temporarily unavailable, so verified curated curriculum questions are being used.');
+      }
+      setGameState(GAME_STATES.PLAYING);
     } catch (err) {
       console.error('Error initiating level:', err);
-    } finally {
-      setGameState(GAME_STATES.PLAYING);
+      setGameError(err.message || 'Could not start this level. Please try again.');
+      setGameState(GAME_STATES.TOPIC_SELECTION);
     }
   };
 
@@ -119,10 +141,8 @@ export function App() {
     }
   };
 
-  // Orb Collected Handler
-  const handleOrbCollected = (orb) => {
-    setGameplayXP(x => x + orb.value);
-  };
+  // Visual collectibles do not grant XP; only server-verified answers and completion do.
+  const handleOrbCollected = () => {};
 
   // Fall Recovery Respawn Handler
   const handleFallRespawn = () => {
@@ -132,6 +152,9 @@ export function App() {
 
   // Submit Question Answer
   const handleSubmitAnswer = async ({ questionId, concept, chosenOption, hintsUsed }) => {
+    if (!activeSessionId) {
+      throw new Error('Your learning session is not active. Please restart the level.');
+    }
     const idempotencyKey = `idem-${activeSessionId}-${questionId}-${Date.now()}`;
     const payload = {
       questionId,
@@ -143,9 +166,9 @@ export function App() {
     };
 
     const res = await api.submitAnswer(activeSessionId, payload);
-    if (res.success && res.isCorrect) {
+    if (res.success && res.isCorrect && !res.alreadyAnswered) {
       setGameplayXP(x => x + res.xpAwarded);
-      setPendingTokens(t => (parseFloat(t) + parseFloat(res.tokensEntitled)).toFixed(2));
+      setPendingTokens(t => (parseFloat(t) + parseFloat(res.tokensEntitled || '0')).toFixed(2));
       setCheckpointsSolved(prev => new Set([...prev, currentQuestionIndex + 1]));
     }
     return res;
@@ -159,53 +182,49 @@ export function App() {
 
   // Retry with Remedial Question
   const handleRetryWithRemedial = async () => {
+    const currentQ = questions[currentQuestionIndex];
+    if (!currentQ) return;
     try {
-      const currentQ = questions[currentQuestionIndex];
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/ai/remedial`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(api.getToken() && { Authorization: `Bearer ${api.getToken()}` })
-        },
-        body: JSON.stringify({ concept: currentQ?.concept || 'blocks', difficulty: 'beginner' })
-      });
-      const data = await res.json();
-      if (data.success && data.data) {
+      const res = await api.generateRemedial(currentQ.concept || 'blocks', currentQ.difficulty || 'beginner');
+      if (res.success && res.data) {
         setQuestions(prev => {
           const updated = [...prev];
-          updated[currentQuestionIndex] = data.data;
+          updated[currentQuestionIndex] = res.data;
           return updated;
         });
       }
-    } catch (e) {
-      console.warn('Remedial fetch failed', e);
+    } catch (err) {
+      setGameError(err.message || 'Could not load a remedial question.');
     }
   };
 
   // Finish Level
   const handleLevelFinish = async () => {
+    if (!activeSessionId) {
+      setGameError('No active learning session to complete.');
+      return;
+    }
     try {
       const res = await api.completeSession(activeSessionId);
-      if (res.success) {
-        setGameplayXP(x => x + res.bonusXP);
-        setPendingTokens(t => (parseFloat(t) + parseFloat(res.bonusTokens)).toFixed(2));
-        setLevelCompletionData({
-          levelNumber: currentLevelNumber,
-          bonusXP: res.bonusXP,
-          bonusTokens: res.bonusTokens,
-          entitlementId: res.entitlementId
-        });
-        setGameState(GAME_STATES.LEVEL_COMPLETED);
+      if (!res?.success) {
+        throw new Error('The server could not confirm level completion.');
       }
-    } catch (e) {
-      console.error('Level finish error:', e);
+      if (!res.alreadyCompleted) {
+        setGameplayXP(x => x + res.bonusXP);
+        setPendingTokens(t => (parseFloat(t) + parseFloat(res.bonusTokens || '0')).toFixed(2));
+      }
       setLevelCompletionData({
         levelNumber: currentLevelNumber,
-        bonusXP: 50,
-        bonusTokens: '5.00',
-        entitlementId: `ent-${Date.now()}`
+        bonusXP: res.bonusXP,
+        bonusTokens: res.bonusTokens,
+        entitlementId: res.entitlementId
       });
       setGameState(GAME_STATES.LEVEL_COMPLETED);
+      await refreshUserData();
+    } catch (err) {
+      console.error('Level finish error:', err);
+      setGameError(err.message || 'Could not complete the level. Please try again.');
+      setGameState(GAME_STATES.PLAYING);
     }
   };
 
@@ -217,6 +236,16 @@ export function App() {
   };
 
   const equippedAccessories = storeItems.filter(i => i.isEquipped);
+  const courseCheckpointCount = courseData.platforms.filter(p => p.type === 'CHECKPOINT').length;
+  const totalCheckpoints = questions.length || courseCheckpointCount;
+
+  if (authLoading) {
+    return (
+      <div className="w-screen h-screen bg-[#0a0d14] flex items-center justify-center text-slate-300 text-sm">
+        Loading LearnQuest...
+      </div>
+    );
+  }
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-[#0a0d14] relative">
@@ -229,6 +258,12 @@ export function App() {
         gameplayXP={gameplayXP}
         pendingTokens={pendingTokens}
       />
+
+      {gameError && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[calc(100%-2rem)] px-4 py-2.5 rounded-xl bg-amber-950/90 border border-amber-500/50 text-amber-200 text-xs font-medium shadow-xl">
+          {gameError}
+        </div>
+      )}
 
       {/* Screen Views */}
       {gameState === GAME_STATES.MENU && (
@@ -257,7 +292,7 @@ export function App() {
             currentLevel={currentLevelNumber}
             levelTitle="Blocks & Cryptography"
             checkpointsCompleted={checkpointsSolved.size}
-            totalCheckpoints={3}
+            totalCheckpoints={totalCheckpoints}
             respawnAlert={respawnAlert}
           />
 

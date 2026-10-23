@@ -62,13 +62,6 @@ export function DashboardScreen({ onStartLevel, onOpenStore, onOpenWallet }) {
     loadDashboardData();
   }, [user]);
 
-  const currentLevelInfo = selectedTopic.levels?.[0] || {
-    level: 1,
-    title: 'Blocks & Cryptography',
-    objective: 'Learn how transaction batches form immutable cryptographic chains.',
-    platformsCount: 5
-  };
-
   return (
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 max-w-6xl mx-auto select-none pointer-events-auto">
       {/* Welcome Banner */}
@@ -186,6 +179,23 @@ export function DashboardScreen({ onStartLevel, onOpenStore, onOpenWallet }) {
             </div>
           </div>
 
+          {/* Topic Selector */}
+          <div className="flex flex-wrap gap-2">
+            {topics.map((topic) => (
+              <button
+                key={topic.id || topic.slug}
+                onClick={() => setSelectedTopic(topic)}
+                className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all ${
+                  selectedTopic.slug === topic.slug
+                    ? 'bg-indigo-950/80 border-indigo-400 text-indigo-200'
+                    : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                {topic.title}
+              </button>
+            ))}
+          </div>
+
           {/* Course Levels List */}
           <div className="space-y-4">
             {selectedTopic.levels?.map((lvl) => (
@@ -219,54 +229,47 @@ export function DashboardScreen({ onStartLevel, onOpenStore, onOpenWallet }) {
 
         {/* Right: Topic Mastery Radar & Store Teaser */}
         <div className="space-y-6">
-          {/* Topic Mastery Card */}
+          {/* Live Progress Snapshot */}
           <div className="p-6 rounded-3xl glass-panel border border-slate-800">
             <h3 className="font-display font-bold text-base text-white mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-indigo-400" />
-              <span>Topic Mastery</span>
+              <span>Your Progress</span>
             </h3>
 
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-xs font-medium text-slate-300 mb-1">
-                  <span>Cryptographic Hashing</span>
-                  <span className="text-emerald-400 font-bold">100%</span>
+                  <span>Player Level {progress.playerLevel}</span>
+                  <span className="text-indigo-300 font-bold">
+                    {progress.totalXP} / {progress.nextLevelXP} XP
+                  </span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full w-full" />
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(100, Math.round((progress.totalXP / Math.max(1, progress.nextLevelXP)) * 100))}%`
+                    }}
+                  />
                 </div>
               </div>
 
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1">
-                  <span>Block Structure & Headers</span>
-                  <span className="text-indigo-400 font-bold">85%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full w-[85%]" />
-                </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <span className="text-xs text-slate-400">Completed Levels</span>
+                <span className="text-sm font-bold text-emerald-400">{progress.completedLevels}</span>
               </div>
-
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1">
-                  <span>Consensus & Mining / PoS</span>
-                  <span className="text-cyan-400 font-bold">70%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-cyan-500 rounded-full w-[70%]" />
-                </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <span className="text-xs text-slate-400">Pending Token Vouchers</span>
+                <span className="text-sm font-bold text-cyan-300">{rewardBalances.pendingClaimableTokens} LQST</span>
               </div>
-
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1">
-                  <span>Smart Contracts & EIP-712</span>
-                  <span className="text-amber-400 font-bold">60%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full w-[60%]" />
-                </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <span className="text-xs text-slate-400">Answered Checkpoints</span>
+                <span className="text-sm font-bold text-indigo-300">{progress.completedLevels} levels completed</span>
               </div>
             </div>
+            <p className="text-[11px] text-slate-500 mt-4">
+              All progress shown here is loaded from your LearnQuest account ledger.
+            </p>
           </div>
 
           {/* Cosmetic Store Banner */}

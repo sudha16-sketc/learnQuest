@@ -44,7 +44,37 @@ export const QuestionItemSchema = z.object({
 export const QuestionGenerationResponseSchema = z.object({
   topic: z.string(),
   difficulty: z.string(),
-  questions: z.array(QuestionItemSchema).min(1)
+  questions: z.array(QuestionItemSchema).min(1).max(10)
+});
+
+export const ExplanationResponseSchema = z.object({
+  explanation: z.string().min(5),
+  keyTakeaway: z.string().min(3)
+});
+
+export const HintResponseSchema = z.object({
+  hint: z.string().min(3)
+});
+
+export const SessionStartSchema = z.object({
+  topicId: z.string().min(1).optional().default('blockchain-fundamentals'),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner')
+});
+
+export const ExplanationRequestSchema = z.object({
+  concept: z.string().min(1).max(200),
+  chosenAnswer: z.string().min(1).max(500),
+  correctAnswer: z.string().min(1).max(500)
+});
+
+export const HintRequestSchema = z.object({
+  concept: z.string().min(1).max(200),
+  question: z.string().min(1).max(2000)
+});
+
+export const RemedialQuestionRequestSchema = z.object({
+  concept: z.string().min(1).max(200),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner')
 });
 
 export const AnswerSubmissionSchema = z.object({

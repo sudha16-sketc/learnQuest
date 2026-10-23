@@ -1,6 +1,6 @@
 /**
  * AI Provider Interface
- * All AI providers (Ollama, Gemini, OpenAI, Claude) must implement this contract.
+ * All AI providers (Gemini, curated fallback, or future hosted providers) must implement this contract.
  */
 
 export class IAIProvider {

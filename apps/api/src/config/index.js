@@ -17,10 +17,13 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/learnquest?schema=public',
 
   ai: {
-    provider: process.env.AI_PROVIDER || 'ollama',
-    ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    ollamaModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b',
-    timeoutMs: parseInt(process.env.AI_TIMEOUT_MS || '15000', 10)
+    provider: (process.env.AI_PROVIDER || 'gemini').toLowerCase(),
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+    timeoutMs: parseInt(process.env.AI_TIMEOUT_MS || '20000', 10),
+    maxRetries: parseInt(process.env.AI_MAX_RETRIES || '2', 10),
+    cacheTtlMs: parseInt(process.env.AI_CACHE_TTL_MS || '600000', 10),
+    cacheMaxEntries: parseInt(process.env.AI_CACHE_MAX_ENTRIES || '200', 10)
   },
 
   blockchain: {
