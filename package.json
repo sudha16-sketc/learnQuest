@@ -1,0 +1,39 @@
+{
+  "name": "learnquest-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LearnQuest - AI-Powered 3D Learning Game + MST Blockchain + Utility Token",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "contracts"
+  ],
+  "scripts": {
+    "dev:api": "npm --workspace=@learnquest/api run dev",
+    "dev:web": "npm --workspace=@learnquest/web run dev",
+    "dev:mobile": "npm --workspace=@learnquest/mobile run start",
+    "build:packages": "npm --workspace=@learnquest/shared run build && npm --workspace=@learnquest/game-core run build",
+    "build:web": "npm --workspace=@learnquest/web run build",
+    "test:contracts": "npm --workspace=@learnquest/contracts run test",
+    "test:api": "npm --workspace=@learnquest/api run test",
+    "test": "npm run test:contracts && npm run test:api",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:seed": "node apps/api/src/scripts/seed.js"
+  },
+  "keywords": [
+    "learnquest",
+    "threejs",
+    "web3",
+    "blockchain",
+    "mst-chain",
+    "ollama",
+    "game",
+    "education"
+  ],
+  "author": "LearnQuest Team",
+  "license": "MIT",
+  "devDependencies": {
+    "prisma": "^5.14.0"
+  }
+}

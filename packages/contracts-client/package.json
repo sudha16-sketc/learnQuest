@@ -1,0 +1,10 @@
+{
+  "name": "@learnquest/contracts-client",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "type": "module",
+  "dependencies": {
+    "@learnquest/shared": "*",
+    "ethers": "^6.12.1"
+  }
+}

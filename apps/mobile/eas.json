@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "version": ">= 9.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.learnquest.io",
+        "EXPO_PUBLIC_MST_CHAIN_ID": "91562037",
+        "EXPO_PUBLIC_MST_RPC_URL": "https://testnetrpc.mstblockchain.com"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.learnquest.io",
+        "EXPO_PUBLIC_MST_CHAIN_ID": "91562037",
+        "EXPO_PUBLIC_MST_RPC_URL": "https://testnetrpc.mstblockchain.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
