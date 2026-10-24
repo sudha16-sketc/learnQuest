@@ -31,6 +31,7 @@ services:
       PORT: 4000
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/learnquest?schema=public
+      DATABASE_URL_UNPOOLED: postgresql://postgres:postgrespassword@postgres:5432/learnquest?schema=public
       JWT_SECRET: learnquest_docker_secret_jwt_key
       CORS_ORIGIN: "*"
       AI_PROVIDER: ${AI_PROVIDER:-gemini}

@@ -12,13 +12,14 @@
     "dev:api": "npm --workspace=@learnquest/api run dev",
     "dev:web": "npm --workspace=@learnquest/web run dev",
     "dev:mobile": "npm --workspace=@learnquest/mobile run start",
+    "build": "npm run build:packages && npm run build:web",
     "build:packages": "npm --workspace=@learnquest/shared run build && npm --workspace=@learnquest/game-core run build",
     "build:web": "npm --workspace=@learnquest/web run build",
     "test:contracts": "npm --workspace=@learnquest/contracts run test",
     "test:api": "npm --workspace=@learnquest/api run test",
     "test": "npm run test:contracts && npm run test:api",
-    "db:generate": "npx prisma generate",
-    "db:push": "npx prisma db push",
+    "db:generate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local node_modules/prisma/build/index.js generate",
+    "db:push": "node --env-file-if-exists=.env --env-file-if-exists=.env.local node_modules/prisma/build/index.js db push",
     "db:seed": "node apps/api/src/scripts/seed.js"
   },
   "keywords": [
@@ -39,5 +40,9 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.65.0"
+  },
+  "dependencies": {
+    "@neon/config": "^1.9.3",
+    "@neon/env": "^1.6.4"
   }
 }

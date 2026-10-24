@@ -5,8 +5,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from root if not already loaded
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+// Load root env files. Local values take precedence over shared defaults.
+const rootDir = path.resolve(__dirname, '../../../..');
+dotenv.config({ path: path.join(rootDir, '.env') });
+dotenv.config({ path: path.join(rootDir, '.env.local'), override: true });
 
 export const config = {
   env: process.env.NODE_ENV || 'development',
