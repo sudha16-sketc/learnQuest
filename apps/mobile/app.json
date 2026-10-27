@@ -6,25 +6,20 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0a0d14"
-    },
     "scheme": "learnquest",
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.learnquest.app"
+      "bundleIdentifier": "com.sudha2216.learnquestmonorepo"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0d14"
       },
-      "package": "com.learnquest.app",
+      "package": "com.sudha2216.learnquestmonorepo",
       "permissions": [
         "INTERNET"
       ],
@@ -32,6 +27,26 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bf8fca7f-afe8-4952-be5f-a9e6386c5009"
+      }
+    },
+    "owner": "sudha2216",
+    "plugins": [
+      "expo-asset",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0a0d14",
+          "enableFullScreenImage_legacy": true
+        }
+      ]
+    ]
   }
 }

@@ -12,6 +12,7 @@ import { StoreModal } from './screens/StoreModal';
 import { WalletModal } from './screens/WalletModal';
 import { AchievementsModal } from './screens/AchievementsModal';
 import { AuthModal } from './screens/AuthModal';
+import { LegalModal } from './screens/LegalModal';
 
 import { generateLevelCourse } from '@learnquest/game-core';
 import { GAME_STATES, ACCESSORIES_CATALOG } from '@learnquest/shared';
@@ -45,6 +46,7 @@ export function App() {
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [legalModalDoc, setLegalModalDoc] = useState(null); // 'tos' | 'privacy' | null
   const [levelCompletionData, setLevelCompletionData] = useState(null);
 
   // Equipped Cosmetics
@@ -141,7 +143,6 @@ export function App() {
     }
   };
 
-  // Visual collectibles do not grant XP; only server-verified answers and completion do.
   const handleOrbCollected = () => {};
 
   // Fall Recovery Respawn Handler
@@ -241,26 +242,36 @@ export function App() {
 
   if (authLoading) {
     return (
-      <div className="w-screen h-screen bg-[#0a0d14] flex items-center justify-center text-slate-300 text-sm">
-        Loading LearnQuest...
+      <div className="w-screen h-screen bg-[#0d1410] flex items-center justify-center text-[#d2fcf8] text-xs font-mono uppercase tracking-wider">
+        Loading LearnQuest Systems...
       </div>
     );
   }
 
+  const isPlayingGame = (
+    gameState === GAME_STATES.PLAYING ||
+    gameState === GAME_STATES.QUESTION_ACTIVE ||
+    gameState === GAME_STATES.FEEDBACK ||
+    gameState === GAME_STATES.LEVEL_COMPLETED ||
+    gameState === GAME_STATES.LOADING_QUESTIONS
+  );
+
   return (
-    <div className="w-screen h-screen overflow-hidden bg-[#0a0d14] relative">
+    <div className={`w-full min-h-screen bg-[#0d1410] text-[#d2fcf8] relative ${isPlayingGame ? 'h-screen overflow-hidden' : ''}`}>
       {/* Persistent Navbar */}
       <Navbar
         onOpenStore={() => setIsStoreOpen(true)}
         onOpenWallet={() => setIsWalletOpen(true)}
         onOpenAchievements={() => setIsAchievementsOpen(true)}
         onOpenDashboard={() => setGameState(GAME_STATES.TOPIC_SELECTION)}
+        onOpenTOS={() => setLegalModalDoc('tos')}
+        onOpenPrivacy={() => setLegalModalDoc('privacy')}
         gameplayXP={gameplayXP}
         pendingTokens={pendingTokens}
       />
 
       {gameError && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[calc(100%-2rem)] px-4 py-2.5 rounded-xl bg-amber-950/90 border border-amber-500/50 text-amber-200 text-xs font-medium shadow-xl">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[calc(100%-2rem)] px-4 py-2.5 bg-[#0d1410] border-2 border-[#6d6499] text-[#6d6499] text-xs font-mono font-medium">
           {gameError}
         </div>
       )}
@@ -270,6 +281,8 @@ export function App() {
         <LandingScreen
           onStart={() => startLevel('blockchain-fundamentals', 1, 'beginner')}
           onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenTOS={() => setLegalModalDoc('tos')}
+          onOpenPrivacy={() => setLegalModalDoc('privacy')}
         />
       )}
 
@@ -290,7 +303,7 @@ export function App() {
         <>
           <HUD
             currentLevel={currentLevelNumber}
-            levelTitle="Blocks & Cryptography"
+            levelTitle="Blocks and Cryptography"
             checkpointsCompleted={checkpointsSolved.size}
             totalCheckpoints={totalCheckpoints}
             respawnAlert={respawnAlert}
@@ -359,6 +372,13 @@ export function App() {
           setIsAuthOpen(false);
           refreshUserData();
         }}
+      />
+
+      {/* Legal Compliance Modal (Terms of Service / Privacy Policy) */}
+      <LegalModal
+        isOpen={!!legalModalDoc}
+        documentType={legalModalDoc}
+        onClose={() => setLegalModalDoc(null)}
       />
     </div>
   );

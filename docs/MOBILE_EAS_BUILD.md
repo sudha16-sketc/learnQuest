@@ -1,6 +1,6 @@
 # LearnQuest Mobile — Android APK & AAB Build Guide (Expo EAS)
 
-LearnQuest Mobile is built with React Native and Expo (SDK 51). It authenticates against the shared LearnQuest API, loads server-scored questions, tracks the same XP ledger and reward entitlements as the web app, and renders a native 3D floating-island preview. Wallet linking and on-chain claims are intentionally performed through the web wallet flow rather than simulated in the mobile app.
+LearnQuest Mobile is built with React Native and Expo (SDK 58, React Native 0.88, React 19.3). It authenticates against the shared LearnQuest API, loads server-scored questions, tracks the same XP ledger and reward entitlements as the web app, and renders a native 3D floating-island preview. Wallet linking and on-chain claims are intentionally performed through the web wallet flow rather than simulated in the mobile app.
 
 Both the web and mobile frontends connect to the same Express.js online API backend. The Gemini API key remains on that backend; the mobile bundle never contains it.
 
@@ -113,7 +113,7 @@ To run the app locally on an Android emulator or with Expo Go:
 EXPO_PUBLIC_API_BASE_URL=http://YOUR_LAN_IP:4000 npm run dev:mobile
 ```
 
-For the Android emulator use `http://10.0.2.2:4000`. For a physical device use the computer's LAN IP; `localhost` points at the phone itself. Scan the displayed QR code with Expo Go.
+For the Android emulator use `http://10.0.2.2:4000`. For a physical device use the computer's LAN IP; `localhost` points at the phone itself. Scan the displayed QR code with an Expo Go build that supports SDK 58. The API must be reachable from the phone (same Wi-Fi/LAN, or a public/tunneled API URL); the Expo tunnel only exposes the Metro bundler, not the API on port 4000.
 
 The `preview` and `production` profiles in `eas.json` currently use `https://api.learnquest.io`; replace that with your deployed API URL before building. A successful Android bundle export can be checked locally with:
 

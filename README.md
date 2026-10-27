@@ -29,7 +29,7 @@ LearnQuest transforms computer science and blockchain education into an interact
 learnquest/
   apps/
     web/                  # React, Vite, Three.js, React Three Fiber, GSAP, Tailwind
-    mobile/               # React Native, Expo SDK 51, Three.js R3F, EAS Build config
+    mobile/               # React Native, Expo SDK 58, Three.js R3F, EAS Build config
     api/                  # Express.js REST API, Prisma, AI Service, Voucher Signer
   packages/
     shared/               # Network configs, game states, XP economy constants

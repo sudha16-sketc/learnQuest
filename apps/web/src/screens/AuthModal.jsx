@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Sparkles, LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { IconX, IconUser, IconLogIn, IconUserPlus, IconLoader } from '../components/Icons';
 
 export function AuthModal({ isOpen, onClose }) {
   const { login, register } = useAuth();
@@ -33,33 +33,33 @@ export function AuthModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md pointer-events-auto">
-      <div className="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 border border-indigo-500/30 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0d1410]/90 pointer-events-auto select-none">
+      <div className="w-full max-w-md bg-[#0d1410] border-2 border-[#17985d] p-6 sm:p-8 relative font-mono">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-[#17985d]/30">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-600 text-white">
-              <Sparkles className="w-5 h-5" />
+            <div className="p-2 bg-[#0d1410] border border-[#17985d] text-[#17985d]">
+              <IconUser className="w-5 h-5" />
             </div>
-            <h2 className="text-xl font-display font-extrabold text-white">
-              {isRegister ? 'Create Account' : 'Welcome Back'}
+            <h2 className="text-lg font-bold uppercase tracking-wider text-[#ffffff]">
+              {isRegister ? 'Register Explorer' : 'Explorer Sign In'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+            className="p-1.5 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] hover:bg-[#17985d] hover:text-[#0d1410]"
           >
-            <X className="w-4 h-4" />
+            <IconX className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab switch */}
-        <div className="flex p-1 rounded-xl bg-slate-900 border border-slate-800 mb-5">
+        <div className="flex border border-[#17985d] mb-5">
           <button
             type="button"
             onClick={() => { setIsRegister(false); setError(null); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-              !isRegister ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider ${
+              !isRegister ? 'bg-[#17985d] text-[#ffffff]' : 'text-[#d2fcf8]/60 hover:text-[#ffffff]'
             }`}
           >
             Sign In
@@ -67,8 +67,8 @@ export function AuthModal({ isOpen, onClose }) {
           <button
             type="button"
             onClick={() => { setIsRegister(true); setError(null); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-              isRegister ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider ${
+              isRegister ? 'bg-[#17985d] text-[#ffffff]' : 'text-[#d2fcf8]/60 hover:text-[#ffffff]'
             }`}
           >
             Register
@@ -76,28 +76,30 @@ export function AuthModal({ isOpen, onClose }) {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs font-medium">
+          <div className="mb-4 p-2.5 bg-[#0d1410] border border-[#6d6499] text-[#6d6499] text-xs font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {isRegister && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+              <label className="block font-bold uppercase tracking-wider text-[#6d6499] mb-1">
+                Email Address
+              </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="student@example.com"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:border-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] focus:border-[#ffffff] focus:outline-none"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block font-bold uppercase tracking-wider text-[#6d6499] mb-1">
               {isRegister ? 'Choose Username' : 'Username or Email'}
             </label>
             <input
@@ -106,37 +108,39 @@ export function AuthModal({ isOpen, onClose }) {
               value={username}
               onChange={e => setUsername(e.target.value)}
               placeholder={isRegister ? 'explorer_alex' : 'student@example.com'}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:border-indigo-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] focus:border-[#ffffff] focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <label className="block font-bold uppercase tracking-wider text-[#6d6499] mb-1">
+              Password
+            </label>
             <input
               type="password"
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:border-indigo-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] focus:border-[#ffffff] focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+            className="w-full py-2.5 bg-[#17985d] hover:bg-[#17985d]/90 text-[#ffffff] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <IconLoader className="w-4 h-4" />
             ) : isRegister ? (
               <>
-                <UserPlus className="w-4 h-4" />
+                <IconUserPlus className="w-4 h-4" />
                 <span>Create Explorer Profile</span>
               </>
             ) : (
               <>
-                <LogIn className="w-4 h-4" />
+                <IconLogIn className="w-4 h-4" />
                 <span>Sign In to LearnQuest</span>
               </>
             )}

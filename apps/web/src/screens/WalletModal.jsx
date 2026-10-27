@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, X, Coins, ExternalLink, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import {
+  IconWallet,
+  IconX,
+  IconCoins,
+  IconExternalLink,
+  IconAlertTriangle,
+  IconCheckCircle,
+  IconLoader
+} from '../components/Icons';
 import { useWeb3 } from '../context/Web3Context';
 import { api } from '../services/api';
 
@@ -75,36 +83,38 @@ export function WalletModal({ isOpen, onClose }) {
   const explorerBase = contractsConfig?.network?.explorerUrl || 'https://testnet.mstscan.com';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md pointer-events-auto">
-      <div className="w-full max-w-xl glass-panel rounded-3xl p-6 sm:p-8 border border-indigo-500/30 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0d1410]/90 pointer-events-auto select-none">
+      <div className="w-full max-w-xl bg-[#0d1410] border-2 border-[#17985d] p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto font-mono">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#17985d]/30">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-cyan-400">
-              <Wallet className="w-6 h-6" />
+            <div className="p-2 bg-[#0d1410] border border-[#17985d] text-[#17985d]">
+              <IconWallet className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-display font-extrabold text-white">MST Wallet & Tokens</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#ffffff]">
+                MST Wallet and Tokens
+              </h2>
+              <p className="text-xs text-[#d2fcf8]/70">
                 Connect MetaMask, manage balances, and claim on-chain reward vouchers.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+            className="p-1.5 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] hover:bg-[#17985d] hover:text-[#0d1410]"
           >
-            <X className="w-5 h-5" />
+            <IconX className="w-5 h-5" />
           </button>
         </div>
 
         {/* Feedback Alert */}
         {feedback && (
           <div
-            className={`mb-6 p-4 rounded-2xl text-xs font-medium border animate-fadeIn ${
+            className={`mb-6 p-3 text-xs font-bold border uppercase tracking-wider ${
               feedback.type === 'success'
-                ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200'
-                : 'bg-rose-950/60 border-rose-500 text-rose-200'
+                ? 'bg-[#0d1410] border-[#17985d] text-[#17985d]'
+                : 'bg-[#0d1410] border-[#6d6499] text-[#6d6499]'
             }`}
           >
             <p>{feedback.message}</p>
@@ -113,10 +123,10 @@ export function WalletModal({ isOpen, onClose }) {
                 href={`${explorerBase}/tx/${feedback.txHash}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-cyan-300 font-mono hover:underline"
+                className="inline-flex items-center gap-1 mt-2 text-[#17985d] hover:underline"
               >
-                <span>View on MSTScan: {feedback.txHash.slice(0, 12)}...</span>
-                <ExternalLink className="w-3 h-3" />
+                <span>Explorer Link: {feedback.txHash.slice(0, 14)}...</span>
+                <IconExternalLink className="w-3 h-3" />
               </a>
             )}
           </div>
@@ -124,59 +134,64 @@ export function WalletModal({ isOpen, onClose }) {
 
         {/* Wallet Connection Status Card */}
         {account ? (
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 mb-6">
+          <div className="p-4 bg-[#0d1410] border border-[#17985d] mb-6">
             <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Connected Wallet</span>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{account.slice(0, 6)}...{account.slice(-4)}</span>
+              <span className="text-xs text-[#6d6499] font-bold uppercase tracking-wider">
+                Connected Address
+              </span>
+              <div className="px-2 py-0.5 border border-[#17985d] text-xs text-[#ffffff]">
+                {account.slice(0, 6)}...{account.slice(-4)}
               </div>
             </div>
 
             {/* Network Check */}
             {!isMSTNetwork ? (
-              <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-500/50 flex items-center justify-between gap-3 text-xs text-amber-200 mb-4">
+              <div className="p-3 bg-[#0d1410] border border-[#6d6499] flex items-center justify-between gap-3 text-xs text-[#6d6499] mb-4">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Connected to wrong network (Chain {chainId}). Switch to MST Testnet.</span>
+                  <IconAlertTriangle className="w-4 h-4 text-[#6d6499] shrink-0" />
+                  <span>Chain ID {chainId} detected. Switch to MST Testnet.</span>
                 </div>
                 <button
                   onClick={switchToMSTNetwork}
-                  className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shrink-0 transition-all"
+                  className="px-3 py-1 bg-[#6d6499] text-[#ffffff] font-bold uppercase tracking-wider"
                 >
                   Switch Network
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400 mb-4">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-1.5 text-xs text-[#17985d] mb-4">
+                <IconCheckCircle className="w-4 h-4 text-[#17985d]" />
                 <span>Verified MST Testnet (Chain ID: {contractsConfig?.network?.chainId || 91562037})</span>
               </div>
             )}
 
             {/* Balances */}
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#17985d]/30">
               <div>
-                <span className="text-[11px] text-slate-400 font-semibold uppercase">Gas Token (tMSTC)</span>
-                <div className="text-lg font-extrabold text-white">{nativeBalance}</div>
+                <span className="text-[10px] text-[#6d6499] font-bold uppercase block">
+                  Gas Token (tMSTC)
+                </span>
+                <div className="text-base sm:text-lg font-bold text-[#ffffff]">{nativeBalance}</div>
               </div>
               <div>
-                <span className="text-[11px] text-slate-400 font-semibold uppercase">Utility Token (LQST)</span>
-                <div className="text-lg font-extrabold text-cyan-300">{tokenBalance}</div>
+                <span className="text-[10px] text-[#6d6499] font-bold uppercase block">
+                  Utility Token (LQST)
+                </span>
+                <div className="text-base sm:text-lg font-bold text-[#17985d]">{tokenBalance}</div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="p-6 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 text-center mb-6">
-            <p className="text-sm text-slate-300 mb-4">
-              Connect your MetaMask browser extension to claim rewards and spend tokens on the MST Blockchain.
+          <div className="p-6 bg-[#0d1410] border border-[#17985d] text-center mb-6">
+            <p className="text-xs text-[#d2fcf8]/80 mb-4">
+              Connect your MetaMask wallet to claim vouchers and transfer utility tokens on the MST Blockchain.
             </p>
             <button
               onClick={connectWallet}
               disabled={isConnecting}
-              className="py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 inline-flex items-center gap-2 transition-all"
+              className="py-2.5 px-6 bg-[#17985d] hover:bg-[#17985d]/90 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2"
             >
-              <Wallet className="w-4 h-4" />
+              <IconWallet className="w-4 h-4" />
               <span>{isConnecting ? 'Connecting...' : 'Connect MetaMask'}</span>
             </button>
           </div>
@@ -184,37 +199,39 @@ export function WalletModal({ isOpen, onClose }) {
 
         {/* Pending Claimable Vouchers Section */}
         <div>
-          <h3 className="text-sm font-display font-bold text-white mb-3 flex items-center justify-between">
-            <span>Pending Reward Vouchers</span>
-            <span className="text-xs text-slate-400 font-normal">
+          <div className="flex items-center justify-between mb-3 pb-1 border-b border-[#17985d]/30">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#ffffff]">
+              Pending Reward Vouchers
+            </h3>
+            <span className="text-xs text-[#6d6499]">
               {pendingVouchers.length} claimable
             </span>
-          </h3>
+          </div>
 
           {pendingVouchers.length === 0 ? (
-            <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-xs text-slate-400">
-              No pending vouchers. Complete learning checkpoints and levels to earn rewards!
+            <div className="p-4 bg-[#0d1410] border border-[#17985d]/40 text-center text-xs text-[#d2fcf8]/60">
+              No pending vouchers. Complete learning checkpoints and levels to earn rewards.
             </div>
           ) : (
-            <div className="space-y-2.5 max-h-56 overflow-y-auto">
+            <div className="space-y-2 max-h-56 overflow-y-auto">
               {pendingVouchers.map((v) => (
                 <div
                   key={v.id}
-                  className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+                  className="p-3 bg-[#0d1410] border border-[#17985d]/50 flex items-center justify-between gap-3 text-xs"
                 >
                   <div>
-                    <div className="font-semibold text-slate-200">{v.reason}</div>
-                    <div className="text-[11px] text-slate-400">Status: {v.status}</div>
+                    <div className="font-bold text-[#ffffff]">{v.reason}</div>
+                    <div className="text-[10px] text-[#6d6499]">Status: {v.status}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-cyan-300 text-sm">+{v.amountTokens} LQST</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-[#17985d]">+{v.amountTokens} LQST</span>
                     <button
                       onClick={() => handleClaimVoucher(v.id)}
                       disabled={claimingId === v.id || !account || !isMSTNetwork}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold transition-all flex items-center gap-1"
+                      className="px-3 py-1 bg-[#17985d] text-[#ffffff] font-bold uppercase tracking-wider disabled:opacity-50 flex items-center gap-1"
                     >
                       {claimingId === v.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <IconLoader className="w-3.5 h-3.5" />
                       ) : (
                         <span>Claim</span>
                       )}

@@ -1,85 +1,181 @@
 import React from 'react';
-import { Play, Sparkles, Shield, Cpu, Coins, Award, ArrowRight } from 'lucide-react';
+import {
+  IconPlay,
+  IconCpu,
+  IconCoins,
+  IconAward,
+  IconShield,
+  IconArrowRight
+} from '../components/Icons';
 
-export function LandingScreen({ onStart, onOpenAuth }) {
+export function LandingScreen({ onStart, onOpenAuth, onOpenTOS, onOpenPrivacy }) {
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 max-w-6xl mx-auto flex flex-col justify-center select-none pointer-events-auto">
+    <div className="w-full min-h-screen pt-20 pb-16 px-4 sm:px-6 max-w-6xl mx-auto flex flex-col bg-[#0d1410] text-[#d2fcf8]">
       {/* Hero Section */}
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-indigo-500/20">
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>LearnQuest • Next-Gen Educational Gaming</span>
+      <div className="max-w-4xl mx-auto my-auto py-8">
+        <div className="inline-block px-3 py-1 bg-[#0d1410] border border-[#17985d] text-[#17985d] text-xs font-mono font-bold uppercase tracking-wider mb-6">
+          Educational Gaming Platform on MST Blockchain
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-display font-extrabold text-white tracking-tight leading-tight mb-6">
-          Level Up Your Knowledge in a{' '}
-          <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-300 bg-clip-text text-transparent">
-            3D Floating World
-          </span>
+        <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-[#ffffff] tracking-tight leading-tight mb-6 uppercase">
+          Master Computer Science in a 3D Island World
         </h1>
 
-        <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-8 max-w-2xl mx-auto">
-          Traverse low-poly floating islands, jump across moving platforms, master AI-generated blockchain challenges at knowledge checkpoints, and claim verifiable utility tokens on MST Blockchain.
+        <p className="text-sm sm:text-base text-[#d2fcf8] leading-relaxed mb-8 max-w-2xl font-mono">
+          Navigate low-poly floating islands, jump across moving platforms, master AI-generated blockchain and algorithms challenges at knowledge checkpoints, and claim verifiable utility tokens on MST Blockchain.
         </p>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {/* Action Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-12">
           <button
             onClick={onStart}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-3 transition-all hover:scale-105"
+            className="px-8 py-3.5 bg-[#17985d] text-[#ffffff] font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-3 hover:bg-[#17985d]/90"
           >
-            <Play className="w-5 h-5 fill-current" />
-            <span>Start Learning</span>
+            <IconPlay className="w-4 h-4" />
+            <span>Start Expedition</span>
           </button>
 
           <button
             onClick={onOpenAuth}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-base flex items-center justify-center gap-2 transition-all"
+            className="px-8 py-3.5 bg-[#0d1410] border-2 border-[#17985d] text-[#d2fcf8] font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#17985d]/10"
           >
-            <span>Create Account / Sign In</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>Create Profile or Sign In</span>
+            <IconArrowRight className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Real Product Demo Section */}
+        <div className="p-6 bg-[#0d1410] border-2 border-[#17985d] mb-12">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 pb-4 border-b border-[#17985d]/30">
+            <div>
+              <span className="text-xs font-mono font-bold text-[#17985d] uppercase tracking-wider">
+                Live Interactive Architecture
+              </span>
+              <h2 className="text-lg font-bold text-[#ffffff] uppercase">
+                Active Three.js Physics, AI Evaluation, and EIP-712 Settlement
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="px-2 py-1 bg-[#17985d] text-[#0d1410] font-bold">LIVE STACK</span>
+              <span className="text-[#6d6499]">React Three Fiber + Gemini + Hardhat</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
+            <div className="space-y-3">
+              <div className="p-3 bg-[#0d1410] border border-[#17985d]/40">
+                <div className="text-[#17985d] font-bold uppercase mb-1">1. Procedural 3D World Generation</div>
+                <p className="text-[#d2fcf8]/80">
+                  Real-time physics calculation of coordinate steps, floating target platforms, moving hazards, and collectible beacons directly executed in your browser.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#0d1410] border border-[#17985d]/40">
+                <div className="text-[#17985d] font-bold uppercase mb-1">2. Adaptive AI Checkpoint Validation</div>
+                <p className="text-[#d2fcf8]/80">
+                  Concept-targeted questions generated with schema verification, server-side answer evaluation, idempotency tokens, and real-time remedial loops.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-[#0d1410] border border-[#6d6499]/60">
+                <div className="text-[#6d6499] font-bold uppercase mb-1">3. EIP-712 Cryptographic Vouchers</div>
+                <p className="text-[#d2fcf8]/80">
+                  Server-signed typed data vouchers issued upon level mastery, redeemable on the MST Testnet smart contracts for zero gas manipulation.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#0d1410] border border-[#6d6499]/60">
+                <div className="text-[#6d6499] font-bold uppercase mb-1">4. Soulbound On-Chain Registry</div>
+                <p className="text-[#d2fcf8]/80">
+                  Permanent academic achievement credentials minted directly to student wallet addresses with tamper-proof smart contract verification.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Architectural Pillars (Split 2x2 asymmetric layout, strictly avoiding 3 in a row) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="p-5 bg-[#0d1410] border border-[#17985d]/50 flex items-start gap-4">
+            <div className="p-3 bg-[#0d1410] border border-[#17985d] text-[#17985d] shrink-0">
+              <IconCpu className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#ffffff] uppercase mb-1">
+                Schema-Validated Adaptive AI
+              </h3>
+              <p className="text-xs text-[#d2fcf8]/80 font-mono leading-relaxed">
+                Powered by Gemini with verified fallback questions. Experience our structured failure recovery loop: Attempt, Diagnose, Explain, Retry, and Master.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 bg-[#0d1410] border border-[#17985d]/50 flex items-start gap-4">
+            <div className="p-3 bg-[#0d1410] border border-[#17985d] text-[#17985d] shrink-0">
+              <IconCoins className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#ffffff] uppercase mb-1">
+                MST Blockchain Utility Token
+              </h3>
+              <p className="text-xs text-[#d2fcf8]/80 font-mono leading-relaxed">
+                Earn immediately credited XP, receive cryptographically signed EIP-712 reward vouchers, and mint utility tokens to your connected MetaMask wallet.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 bg-[#0d1410] border border-[#6d6499]/60 flex items-start gap-4">
+            <div className="p-3 bg-[#0d1410] border border-[#6d6499] text-[#6d6499] shrink-0">
+              <IconAward className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#ffffff] uppercase mb-1">
+                On-Chain Credentials
+              </h3>
+              <p className="text-xs text-[#d2fcf8]/80 font-mono leading-relaxed">
+                Complete mastery challenges to earn tamper-proof diplomas recorded permanently in the MST Achievements registry.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 bg-[#0d1410] border border-[#6d6499]/60 flex items-start gap-4">
+            <div className="p-3 bg-[#0d1410] border border-[#6d6499] text-[#6d6499] shrink-0">
+              <IconShield className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#ffffff] uppercase mb-1">
+                Hardened Security Architecture
+              </h3>
+              <p className="text-xs text-[#d2fcf8]/80 font-mono leading-relaxed">
+                Anti-farming protection, replay protection, non-transferable diploma registry, and strict input validation via Zod schemas.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Feature Pillars */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-        <div className="p-6 rounded-3xl glass-panel border border-indigo-500/20">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-950/80 border border-indigo-500/40 text-indigo-400 flex items-center justify-center mb-4">
-            <Cpu className="w-6 h-6" />
-          </div>
-          <h3 className="font-display font-bold text-lg text-white mb-2">
-            Adaptive AI Learning
-          </h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Powered by Google Gemini with schema-validated JSON generation and a verified curated fallback. Experience our failure-recovery loop: Attempt, Diagnose, Explain, Retry, and Master.
-          </p>
+      {/* Footer with Mandatory Legal Links */}
+      <footer className="pt-6 border-t border-[#17985d]/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#d2fcf8]/60">
+        <div>
+          LearnQuest 2026. All rights reserved.
         </div>
-
-        <div className="p-6 rounded-3xl glass-panel border border-cyan-500/20">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 flex items-center justify-center mb-4">
-            <Coins className="w-6 h-6" />
-          </div>
-          <h3 className="font-display font-bold text-lg text-white mb-2">
-            MST Blockchain Utility Token
-          </h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Earn immediately credited XP, receive cryptographically signed EIP-712 reward vouchers, and mint utility tokens to your connected MetaMask wallet.
-          </p>
+        <div className="flex items-center gap-6">
+          <button
+            onClick={onOpenTOS}
+            className="hover:text-[#ffffff] underline uppercase tracking-wider"
+          >
+            Terms of Service
+          </button>
+          <button
+            onClick={onOpenPrivacy}
+            className="hover:text-[#ffffff] underline uppercase tracking-wider"
+          >
+            Privacy Policy
+          </button>
         </div>
-
-        <div className="p-6 rounded-3xl glass-panel border border-amber-500/20">
-          <div className="w-12 h-12 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-400 flex items-center justify-center mb-4">
-            <Award className="w-6 h-6" />
-          </div>
-          <h3 className="font-display font-bold text-lg text-white mb-2">
-            On-Chain Credentials
-          </h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Complete mastery challenges to earn tamper-proof diplomas recorded permanently in the MST Achievements registry.
-          </p>
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, X, Sparkles, Check, Loader2, Coins } from 'lucide-react';
+import { IconStore, IconX, IconCheck, IconLoader, IconCoins } from '../components/Icons';
 import { useWeb3 } from '../context/Web3Context';
 import { api } from '../services/api';
 
@@ -19,7 +19,7 @@ export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) 
     if (parseFloat(tokenBalance) < parseFloat(item.priceTokens)) {
       setFeedback({
         type: 'error',
-        message: `Insufficient LQST balance (${tokenBalance} held vs ${item.priceTokens} needed). Play courses or claim vouchers to earn tokens!`
+        message: `Insufficient LQST balance (${tokenBalance} held vs ${item.priceTokens} needed). Play courses or claim vouchers to earn tokens.`
       });
       return;
     }
@@ -55,36 +55,38 @@ export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md pointer-events-auto">
-      <div className="w-full max-w-2xl glass-panel rounded-3xl p-6 sm:p-8 border border-indigo-500/30 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0d1410]/90 pointer-events-auto select-none">
+      <div className="w-full max-w-2xl bg-[#0d1410] border-2 border-[#17985d] p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto font-mono">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#17985d]/30">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-indigo-400">
-              <ShoppingBag className="w-6 h-6" />
+            <div className="p-2 bg-[#0d1410] border border-[#17985d] text-[#17985d]">
+              <IconStore className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-display font-extrabold text-white">In-Game Store</h2>
-              <p className="text-xs text-slate-400">
-                Unlock cosmetics and abilities using your earned MST utility tokens.
+              <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#ffffff]">
+                Accessory Store
+              </h2>
+              <p className="text-xs text-[#d2fcf8]/70">
+                Unlock cosmetics and abilities using earned MST utility tokens.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+            className="p-1.5 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] hover:bg-[#17985d] hover:text-[#0d1410]"
           >
-            <X className="w-5 h-5" />
+            <IconX className="w-5 h-5" />
           </button>
         </div>
 
         {/* Feedback Alert */}
         {feedback && (
           <div
-            className={`mb-6 p-4 rounded-2xl text-xs font-medium border animate-fadeIn ${
+            className={`mb-6 p-3 text-xs font-bold border uppercase tracking-wider ${
               feedback.type === 'success'
-                ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200'
-                : 'bg-rose-950/60 border-rose-500 text-rose-200'
+                ? 'bg-[#0d1410] border-[#17985d] text-[#17985d]'
+                : 'bg-[#0d1410] border-[#6d6499] text-[#6d6499]'
             }`}
           >
             {feedback.message}
@@ -99,33 +101,33 @@ export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) 
             return (
               <div
                 key={item.sku}
-                className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between"
+                className="p-4 bg-[#0d1410] border border-[#17985d]/60 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-display font-bold text-base text-white">{item.name}</h3>
-                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-bold shrink-0">
-                      <Coins className="w-3.5 h-3.5" />
+                    <h3 className="font-bold text-sm text-[#ffffff] uppercase">{item.name}</h3>
+                    <div className="flex items-center gap-1 px-2 py-0.5 border border-[#17985d] text-[#17985d] text-xs font-bold shrink-0">
+                      <IconCoins className="w-3.5 h-3.5" />
                       <span>{item.priceTokens} LQST</span>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                  <p className="text-xs text-[#d2fcf8]/80 mb-4 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
 
                 {/* Actions */}
-                <div className="pt-3 border-t border-slate-800/80">
+                <div className="pt-3 border-t border-[#17985d]/30">
                   {item.isUnlocked ? (
                     item.isEquipped ? (
-                      <div className="w-full py-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/60 text-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5">
-                        <Check className="w-4 h-4" />
-                        <span>Equipped on Explorer</span>
+                      <div className="w-full py-2 bg-[#17985d] text-[#ffffff] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+                        <IconCheck className="w-4 h-4" />
+                        <span>Equipped</span>
                       </div>
                     ) : (
                       <button
                         onClick={() => handleEquip(item.sku)}
-                        className="w-full py-2.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 text-indigo-200 text-xs font-bold transition-all"
+                        className="w-full py-2 bg-[#0d1410] border border-[#17985d] hover:bg-[#17985d]/10 text-[#d2fcf8] text-xs font-bold uppercase tracking-wider"
                       >
                         Equip Accessory
                       </button>
@@ -134,18 +136,15 @@ export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) 
                     <button
                       onClick={() => handlePurchase(item)}
                       disabled={isPurchasing}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-60"
+                      className="w-full py-2 bg-[#17985d] hover:bg-[#17985d]/90 text-[#ffffff] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-60"
                     >
                       {isPurchasing ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Purchasing on MST...</span>
+                          <IconLoader className="w-3.5 h-3.5" />
+                          <span>Processing on MST...</span>
                         </>
                       ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Buy with {item.priceTokens} LQST</span>
-                        </>
+                        <span>Purchase for {item.priceTokens} LQST</span>
                       )}
                     </button>
                   )}

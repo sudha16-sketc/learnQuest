@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "type": "module",
+  "exports": {
+    "import": "./src/index.js",
+    "require": "./src/index.cjs",
+    "default": "./src/index.js"
+  },
   "scripts": {
     "build": "node -e \"console.log('@learnquest/game-core build ready')\""
   },

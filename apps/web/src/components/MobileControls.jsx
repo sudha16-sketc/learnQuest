@@ -1,6 +1,6 @@
 import React from 'react';
 import { setVirtualControl } from '../game/useControls';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ArrowBigUp } from 'lucide-react';
+import { IconArrowUp, IconArrowDown, IconArrowLeft, IconArrowRight } from './Icons';
 
 export function MobileControls() {
   const bindTouch = (action) => ({
@@ -25,36 +25,36 @@ export function MobileControls() {
   return (
     <div className="absolute inset-x-0 bottom-6 px-6 pointer-events-none z-30 flex items-end justify-between sm:hidden select-none">
       {/* Directional Pad */}
-      <div className="pointer-events-auto grid grid-cols-3 gap-1.5 w-36 h-36 p-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-700/60 shadow-xl">
+      <div className="pointer-events-auto grid grid-cols-3 gap-1 w-36 h-36 p-1 bg-[#0d1410] border-2 border-[#17985d]">
         <div />
         <button
           {...bindTouch('forward')}
-          className="rounded-full bg-slate-800/80 active:bg-indigo-600 flex items-center justify-center text-slate-200 active:text-white shadow"
+          className="bg-[#0d1410] border border-[#17985d] active:bg-[#17985d] active:text-[#0d1410] flex items-center justify-center text-[#d2fcf8]"
         >
-          <ArrowUp className="w-5 h-5" />
+          <IconArrowUp className="w-5 h-5" />
         </button>
         <div />
 
         <button
           {...bindTouch('left')}
-          className="rounded-full bg-slate-800/80 active:bg-indigo-600 flex items-center justify-center text-slate-200 active:text-white shadow"
+          className="bg-[#0d1410] border border-[#17985d] active:bg-[#17985d] active:text-[#0d1410] flex items-center justify-center text-[#d2fcf8]"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <IconArrowLeft className="w-5 h-5" />
         </button>
-        <div className="rounded-full bg-slate-950/40" />
+        <div className="bg-[#0d1410] border border-[#17985d]/30" />
         <button
           {...bindTouch('right')}
-          className="rounded-full bg-slate-800/80 active:bg-indigo-600 flex items-center justify-center text-slate-200 active:text-white shadow"
+          className="bg-[#0d1410] border border-[#17985d] active:bg-[#17985d] active:text-[#0d1410] flex items-center justify-center text-[#d2fcf8]"
         >
-          <ArrowRight className="w-5 h-5" />
+          <IconArrowRight className="w-5 h-5" />
         </button>
 
         <div />
         <button
           {...bindTouch('backward')}
-          className="rounded-full bg-slate-800/80 active:bg-indigo-600 flex items-center justify-center text-slate-200 active:text-white shadow"
+          className="bg-[#0d1410] border border-[#17985d] active:bg-[#17985d] active:text-[#0d1410] flex items-center justify-center text-[#d2fcf8]"
         >
-          <ArrowDown className="w-5 h-5" />
+          <IconArrowDown className="w-5 h-5" />
         </button>
         <div />
       </div>
@@ -62,9 +62,9 @@ export function MobileControls() {
       {/* Jump Button */}
       <button
         {...bindTouch('jump')}
-        className="pointer-events-auto w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-500 active:scale-95 text-white flex flex-col items-center justify-center shadow-2xl shadow-indigo-500/40 border border-white/20 transition-transform"
+        className="pointer-events-auto w-20 h-20 bg-[#17985d] text-[#ffffff] flex flex-col items-center justify-center border-2 border-[#ffffff] font-mono"
       >
-        <ArrowBigUp className="w-7 h-7" />
+        <IconArrowUp className="w-6 h-6" />
         <span className="text-[10px] font-extrabold uppercase tracking-wider">JUMP</span>
       </button>
     </div>

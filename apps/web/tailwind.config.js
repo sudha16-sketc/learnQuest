@@ -8,20 +8,33 @@ export default {
     extend: {
       colors: {
         quest: {
-          bg: '#0a0d14',
-          surface: '#111827',
-          card: '#1e293b',
-          border: '#334155',
-          primary: '#6366f1',
-          accent: '#06b6d4',
-          gold: '#f59e0b',
-          success: '#10b981',
-          danger: '#ef4444'
+          bg: '#0d1410',
+          secondary: '#17985d',
+          supporting: '#6d6499',
+          highlight: '#d2fcf8',
+          white: '#ffffff',
+          // semantic mapping
+          surface: '#0d1410',
+          card: '#0d1410',
+          border: '#17985d',
+          accent: '#17985d',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Outfit', 'sans-serif']
+        sans: ['"Cinzel Decorative"', 'serif', 'system-ui'],
+        display: ['"Cinzel Decorative"', 'serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+      },
+      borderRadius: {
+        'none': '0px',
+        'sm': '2px',
+        DEFAULT: '2px',
+        'md': '2px',
+        'lg': '2px',
+        'xl': '2px',
+        '2xl': '2px',
+        '3xl': '2px',
+        'full': '2px'
       }
     },
   },

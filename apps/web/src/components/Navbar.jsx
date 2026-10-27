@@ -1,13 +1,21 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
-import { Sparkles, Coins, Wallet, ShoppingBag, Award, User, LogOut } from 'lucide-react';
+import {
+  IconCoins,
+  IconWallet,
+  IconStore,
+  IconAward,
+  IconLogOut
+} from './Icons';
 
 export function Navbar({
   onOpenStore,
   onOpenWallet,
   onOpenAchievements,
   onOpenDashboard,
+  onOpenTOS,
+  onOpenPrivacy,
   gameplayXP = 0,
   pendingTokens = 0
 }) {
@@ -15,86 +23,88 @@ export function Navbar({
   const { account, tokenBalance, isMSTNetwork, connectWallet } = useWeb3();
 
   return (
-    <nav className="absolute top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between pointer-events-auto">
+    <nav className="fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between pointer-events-auto bg-[#0d1410] border-b border-[#17985d]/40 select-none">
       {/* Brand */}
       <div
         onClick={onOpenDashboard}
-        className="flex items-center gap-2 cursor-pointer group select-none"
+        className="flex items-center gap-3 cursor-pointer group"
       >
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
-          <Sparkles className="w-5 h-5 text-white animate-pulse" />
+        <div className="w-9 h-9 bg-[#17985d] text-[#0d1410] flex items-center justify-center font-bold text-lg font-mono">
+          LQ
         </div>
         <div>
-          <span className="font-display font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+          <span className="font-display font-extrabold text-lg tracking-wider text-[#ffffff]">
             LearnQuest
           </span>
-          <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-950/80 border border-indigo-500/40 text-indigo-300">
-            MST 3D
+          <span className="hidden sm:inline-block ml-2 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 bg-[#0d1410] border border-[#17985d] text-[#17985d]">
+            MST Network
           </span>
         </div>
       </div>
 
-      {/* Stats Badges */}
+      {/* Nav Controls & Stats Badges */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Gameplay XP */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/60 shadow-sm backdrop-blur">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-semibold text-slate-300">XP</span>
-          <span className="text-sm font-bold text-amber-400">{gameplayXP}</span>
+        {/* Gameplay XP Badge */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0d1410] border border-[#17985d]">
+          <span className="text-[10px] font-mono font-bold text-[#6d6499] uppercase">XP</span>
+          <span className="text-xs font-mono font-bold text-[#d2fcf8]">{gameplayXP}</span>
         </div>
 
         {/* Claimable / Held Tokens */}
-        <div
+        <button
           onClick={onOpenWallet}
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-700/50 hover:border-indigo-500 shadow-sm backdrop-blur transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0d1410] border border-[#17985d] hover:bg-[#17985d]/10 text-left"
+          title="Open Wallet and Claimable Tokens"
         >
-          <Coins className="w-4 h-4 text-cyan-400" />
-          <span className="text-xs font-semibold text-slate-300">LQST</span>
-          <span className="text-sm font-bold text-cyan-300">
+          <IconCoins className="w-3.5 h-3.5 text-[#17985d]" />
+          <span className="text-[10px] font-mono font-bold text-[#6d6499] uppercase">LQST</span>
+          <span className="text-xs font-mono font-bold text-[#ffffff]">
             {account ? tokenBalance : pendingTokens}
           </span>
-        </div>
+        </button>
 
         {/* Store Button */}
         <button
           onClick={onOpenStore}
-          className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-white transition-all"
+          className="p-1.5 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] hover:bg-[#17985d] hover:text-[#0d1410]"
           title="In-Game Store"
+          aria-label="In-Game Store"
         >
-          <ShoppingBag className="w-4 h-4 text-indigo-400" />
+          <IconStore className="w-4 h-4" />
         </button>
 
         {/* Achievements Button */}
         <button
           onClick={onOpenAchievements}
-          className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-white transition-all"
+          className="p-1.5 bg-[#0d1410] border border-[#17985d] text-[#d2fcf8] hover:bg-[#17985d] hover:text-[#0d1410]"
           title="On-Chain Credentials"
+          aria-label="On-Chain Credentials"
         >
-          <Award className="w-4 h-4 text-amber-400" />
+          <IconAward className="w-4 h-4" />
         </button>
 
         {/* Wallet Connection Status */}
         {account ? (
           <button
             onClick={onOpenWallet}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 border text-xs font-mono font-bold ${
               isMSTNetwork
-                ? 'bg-emerald-950/60 border-emerald-600/60 text-emerald-300 hover:bg-emerald-900/60'
-                : 'bg-amber-950/60 border-amber-600/60 text-amber-300 hover:bg-amber-900/60'
+                ? 'bg-[#0d1410] border-[#17985d] text-[#17985d]'
+                : 'bg-[#0d1410] border-[#6d6499] text-[#6d6499]'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full ${isMSTNetwork ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
-            <span className="font-mono">
+            <div className={`w-1.5 h-1.5 ${isMSTNetwork ? 'bg-[#17985d]' : 'bg-[#6d6499]'}`} />
+            <span>
               {account.slice(0, 6)}...{account.slice(-4)}
             </span>
           </button>
         ) : (
           <button
             onClick={connectWallet}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#17985d] text-[#ffffff] text-xs font-mono font-bold uppercase tracking-wider hover:bg-[#17985d]/90"
           >
-            <Wallet className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Connect</span>
+            <IconWallet className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Connect Wallet</span>
           </button>
         )}
 
@@ -102,10 +112,11 @@ export function Navbar({
         {user && (
           <button
             onClick={logout}
-            className="p-2 rounded-xl bg-slate-900/80 hover:bg-red-950/60 border border-slate-700/60 hover:border-red-600/60 text-slate-400 hover:text-red-400 transition-all"
+            className="p-1.5 bg-[#0d1410] border border-[#6d6499] text-[#6d6499] hover:bg-[#6d6499] hover:text-[#ffffff]"
             title={`Log out (${user.username})`}
+            aria-label={`Log out (${user.username})`}
           >
-            <LogOut className="w-4 h-4" />
+            <IconLogOut className="w-4 h-4" />
           </button>
         )}
       </div>

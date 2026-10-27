@@ -2,29 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #0d1410;
+  --color-secondary: #17985d;
+  --color-supporting: #6d6499;
+  --color-highlight: #d2fcf8;
+  --color-white-accent: #ffffff;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #0d1410;
+  color: #d2fcf8;
+  font-family: 'Cinzel Decorative', serif, system-ui;
+  min-height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
 @layer base {
-  body {
-    background-color: #0a0d14;
-    color: #f8fafc;
-    font-family: 'Inter', system-ui, sans-serif;
+  * {
+    border-radius: 0 !important;
+  }
+
+  button, input, textarea, select {
+    font-family: inherit;
+    border-radius: 0 !important;
   }
 }
 
-/* Glowing aesthetic utility classes */
-.glow-primary {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+/* Strict elimination of drop shadows, gradients, and hover transitions */
+*, *::before, *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  transition-property: none !important;
+  animation-duration: 0.001ms !important;
 }
 
-.glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
+/* Deliberate structural borders */
+.quest-panel {
+  background-color: #0d1410;
+  border: 1px solid #17985d;
 }
 
-.glow-gold {
-  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4);
+.quest-panel-secondary {
+  background-color: #0d1410;
+  border: 1px solid #6d6499;
 }
 
-.glass-panel {
-  background: rgba(17, 24, 39, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.quest-input {
+  background-color: #0d1410;
+  border: 1px solid #17985d;
+  color: #d2fcf8;
+}
+
+.quest-input:focus {
+  outline: 1px solid #ffffff;
+  border-color: #ffffff;
 }
