@@ -39,12 +39,10 @@ html, body, #root {
   }
 }
 
-/* Strict elimination of drop shadows, gradients, and hover transitions */
+/* Strict elimination of drop shadows, gradients */
 *, *::before, *::after {
   box-shadow: none !important;
   text-shadow: none !important;
-  transition-property: none !important;
-  animation-duration: 0.001ms !important;
 }
 
 /* Deliberate structural borders */
