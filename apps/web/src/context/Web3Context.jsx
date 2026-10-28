@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { ethers } from 'ethers';
 import { MST_NETWORKS } from '@learnquest/shared';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@learnquest/contracts-client';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
+import { discoverWalletProviders, getPreferredWalletId, setPreferredWalletId, getProviderById } from '../utils/walletProviders';
 
 const Web3Context = createContext(null);
 
@@ -22,8 +23,11 @@ export function Web3Provider({ children }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(null);
   const [contractsConfig, setContractsConfig] = useState(null);
+  const [providers, setProviders] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [selectedProviderId, setSelectedProviderId] = useState(null);
+  const listenersAttachedRef = useRef(false);
 
-  // Fetch contracts configuration from backend
   useEffect(() => {
     async function loadConfig() {
       try {
@@ -38,6 +42,26 @@ export function Web3Provider({ children }) {
     loadConfig();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    discoverWalletProviders().then((list) => {
+      if (mounted) setProviders(list);
+    });
+    if (typeof window !== 'undefined') {
+      const handler = () => {
+        discoverWalletProviders().then((list) => {
+          if (mounted) setProviders(list);
+        });
+      };
+      window.addEventListener('eip6963:announceProvider', handler);
+      return () => {
+        mounted = false;
+        window.removeEventListener('eip6963:announceProvider', handler);
+      };
+    }
+    return () => { mounted = false; };
+  }, []);
+
   const checkNetwork = useCallback((currentChainId) => {
     const targetChainId = contractsConfig?.network?.chainId || MST_NETWORKS.TESTNET.chainId;
     const isTarget = Number(currentChainId) === targetChainId;
@@ -48,11 +72,8 @@ export function Web3Provider({ children }) {
   const loadBalances = useCallback(async (walletAddress, provider) => {
     if (!walletAddress || !provider) return;
     try {
-      // 1. Native balance (tMSTC)
       const balance = await provider.getBalance(walletAddress);
       setNativeBalance(parseFloat(ethers.formatEther(balance)).toFixed(4));
-
-      // 2. Token balance (LQST)
       if (contractsConfig?.contracts?.token) {
         const tokenContract = new ethers.Contract(
           contractsConfig.contracts.token,
@@ -67,16 +88,37 @@ export function Web3Provider({ children }) {
     }
   }, [contractsConfig]);
 
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      setError('MetaMask not detected. Please install the MetaMask extension.');
+  const getActiveProvider = useCallback(() => {
+    if (selectedProvider) return selectedProvider;
+    const preferred = getPreferredWalletId();
+    const p = getProviderById(providers, preferred) || providers[0];
+    return p?.provider || null;
+  }, [selectedProvider, providers]);
+
+  const connectWallet = async (walletOption = null) => {
+    let providerInstance = walletOption?.provider || null;
+    let providerId = walletOption?.id || null;
+
+    if (!providerInstance) {
+      const preferred = getPreferredWalletId();
+      const preferredProv = getProviderById(providers, preferred);
+      providerInstance = preferredProv?.provider || providers[0]?.provider || null;
+      providerId = preferredProv?.id || providers[0]?.id || null;
+    }
+
+    if (!providerInstance) {
+      setError('No wallet detected. Install BridgeKey or MetaMask and try again.');
       return;
     }
 
     setIsConnecting(true);
     setError(null);
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(providerInstance);
+      setSelectedProvider(providerInstance);
+      setSelectedProviderId(providerId);
+      setPreferredWalletId(providerId);
+
       const accounts = await provider.send('eth_requestAccounts', []);
       const network = await provider.getNetwork();
 
@@ -86,12 +128,11 @@ export function Web3Provider({ children }) {
 
       const isMst = checkNetwork(network.chainId);
       if (!isMst) {
-        await switchToMSTNetwork();
+        await switchToMSTNetwork(providerInstance);
       }
 
       await loadBalances(selectedAccount, provider);
 
-      // If user is logged in, link wallet with signature challenge if not already linked
       if (user && !user.wallets?.some(w => w.address.toLowerCase() === selectedAccount.toLowerCase())) {
         try {
           const signer = await provider.getSigner();
@@ -112,22 +153,22 @@ export function Web3Provider({ children }) {
     }
   };
 
-  const switchToMSTNetwork = async () => {
-    if (!window.ethereum) return;
+  const switchToMSTNetwork = async (providerOverride = null) => {
+    const eth = providerOverride || getActiveProvider();
+    if (!eth) return;
     const target = contractsConfig?.network || MST_NETWORKS.TESTNET;
     const chainIdHex = target.chainIdHex || `0x${target.chainId.toString(16)}`;
 
     try {
-      await window.ethereum.request({
+      await eth.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: chainIdHex }]
       });
       setIsMSTNetwork(true);
     } catch (switchError) {
-      // 4902 error indicates network is not yet in MetaMask, add it
       if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain')) {
         try {
-          await window.ethereum.request({
+          await eth.request({
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: chainIdHex,
@@ -143,7 +184,7 @@ export function Web3Provider({ children }) {
           });
           setIsMSTNetwork(true);
         } catch (addError) {
-          setError(`Failed to add MST Network to MetaMask: ${addError.message}`);
+          setError(`Failed to add MST Network: ${addError.message}`);
         }
       } else {
         setError(`Failed to switch network: ${switchError.message}`);
@@ -151,21 +192,18 @@ export function Web3Provider({ children }) {
     }
   };
 
-  // Claim EIP-712 reward voucher on chain
   const claimRewardOnChain = async (voucherData) => {
-    if (!window.ethereum || !account) {
-      throw new Error('Please connect your MetaMask wallet first');
+    const eth = getActiveProvider();
+    if (!eth || !account) {
+      throw new Error('Please connect your wallet first');
     }
-
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(eth);
     const signer = await provider.getSigner();
-
     const rewardsContract = new ethers.Contract(
-      contractsConfig.contracts.rewards,
+      contractsConfig?.contracts?.rewards || MST_NETWORKS.TESTNET,
       LearnQuestRewardsABI,
       signer
     );
-
     const tx = await rewardsContract.claimReward(
       voucherData.user,
       voucherData.amount,
@@ -174,104 +212,140 @@ export function Web3Provider({ children }) {
       voucherData.reason,
       voucherData.signature
     );
-
     const receipt = await tx.wait();
     await loadBalances(account, provider);
     return receipt;
   };
 
-  // Purchase item from store on chain
   const purchaseStoreItemOnChain = async (sku, priceTokens) => {
-    if (!window.ethereum || !account) {
-      throw new Error('Please connect your MetaMask wallet first');
+    const eth = getActiveProvider();
+    if (!eth || !account) {
+      throw new Error('Please connect your wallet first');
     }
-
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(eth);
     const signer = await provider.getSigner();
     const priceWei = ethers.parseEther(String(priceTokens));
-
-    // 1. Approve store to spend LQST
     const tokenContract = new ethers.Contract(
-      contractsConfig.contracts.token,
+      contractsConfig?.contracts?.token,
       LearnQuestUtilityTokenABI,
       signer
     );
-    const approveTx = await tokenContract.approve(contractsConfig.contracts.store, priceWei);
+    const approveTx = await tokenContract.approve(contractsConfig?.contracts?.store, priceWei);
     await approveTx.wait();
-
-    // 2. Call purchaseItem on store
     const storeContract = new ethers.Contract(
-      contractsConfig.contracts.store,
+      contractsConfig?.contracts?.store,
       LearnQuestGameStoreABI,
       signer
     );
-    const purchaseTx = await storeContract.purchaseItem(sku);
-    const receipt = await purchaseTx.wait();
-
-    // 3. Confirm with backend
-    await api.confirmStorePurchase(sku, receipt.hash);
+    const tx = await storeContract.purchaseItem(sku);
+    const receipt = await tx.wait();
     await loadBalances(account, provider);
-
     return receipt;
   };
 
-  // Listen for account and network changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      const handleAccountsChanged = (accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          loadBalances(accounts[0], provider);
-        } else {
-          setAccount(null);
-        }
-      };
-
-      const handleChainChanged = (newChainId) => {
-        const id = parseInt(newChainId, 16);
-        setChainId(id);
-        checkNetwork(id);
-      };
-
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
-
-      return () => {
-        if (window.ethereum.removeListener) {
-          window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-          window.ethereum.removeListener('chainChanged', handleChainChanged);
-        }
-      };
+  const confirmAchievementOnChain = async (achievementType) => {
+    const eth = getActiveProvider();
+    if (!eth || !account) {
+      throw new Error('Please connect your wallet first');
     }
-  }, [checkNetwork, loadBalances]);
+    if (!isMSTNetwork) {
+      await switchToMSTNetwork(eth);
+    }
+    const provider = new ethers.BrowserProvider(eth);
+    const signer = await provider.getSigner();
+    const achievementsContract = new ethers.Contract(
+      contractsConfig?.contracts?.achievements,
+      LearnQuestAchievementsABI,
+      signer
+    );
+    const tx = await achievementsContract.recordAchievement(account, achievementType, 'LearnQuest Achievement', 100);
+    const receipt = await tx.wait();
+    return receipt;
+  };
 
-  return (
-    <Web3Context.Provider
-      value={{
-        account,
-        chainId,
-        isMSTNetwork,
-        nativeBalance,
-        tokenBalance,
-        isConnecting,
-        error,
-        contractsConfig,
-        connectWallet,
-        switchToMSTNetwork,
-        claimRewardOnChain,
-        purchaseStoreItemOnChain,
-        refreshBalances: () => {
-          if (account && window.ethereum) {
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            loadBalances(account, provider);
-          }
+  useEffect(() => {
+    const eth = getActiveProvider();
+    if (typeof window === 'undefined' || !eth || listenersAttachedRef.current) return;
+
+    const handleAccountsChanged = (accounts) => {
+      if (!accounts || accounts.length === 0) {
+        setAccount(null);
+        setNativeBalance('0.0');
+        setTokenBalance('0.0');
+        return;
+      }
+      setAccount(accounts[0]);
+      try {
+        const provider = new ethers.BrowserProvider(eth);
+        loadBalances(accounts[0], provider);
+      } catch (e) {
+        console.warn(e.message);
+      }
+    };
+
+    const handleChainChanged = (chainIdHex) => {
+      const newChainId = parseInt(chainIdHex, 16);
+      setChainId(newChainId);
+      checkNetwork(newChainId);
+      if (account) {
+        try {
+          const provider = new ethers.BrowserProvider(eth);
+          loadBalances(account, provider);
+        } catch (e) {
+          console.warn(e.message);
         }
-      }}
-    >
-      {children}
-    </Web3Context.Provider>
-  );
+      }
+    };
+
+    try {
+      eth.on?.('accountsChanged', handleAccountsChanged);
+      eth.on?.('chainChanged', handleChainChanged);
+      listenersAttachedRef.current = true;
+    } catch (e) {
+      console.warn(e.message);
+    }
+
+    return () => {
+      try {
+        eth.removeListener?.('accountsChanged', handleAccountsChanged);
+        eth.removeListener?.('chainChanged', handleChainChanged);
+      } catch (e) {}
+      listenersAttachedRef.current = false;
+    };
+  }, [selectedProvider, providers, account, loadBalances, checkNetwork, getActiveProvider]);
+
+  const value = {
+    account,
+    chainId,
+    isMSTNetwork,
+    nativeBalance,
+    tokenBalance,
+    isConnecting,
+    error,
+    setError,
+    contractsConfig,
+    connectWallet,
+    switchToMSTNetwork,
+    claimRewardOnChain,
+    purchaseStoreItemOnChain,
+    confirmAchievementOnChain,
+    refreshBalances: () => {
+      const eth = getActiveProvider();
+      if (account && eth) {
+        try {
+          const provider = new ethers.BrowserProvider(eth);
+          loadBalances(account, provider);
+        } catch (e) {
+          console.warn(e.message);
+        }
+      }
+    },
+    providers,
+    discoverWalletProviders,
+    selectedProviderId
+  };
+
+  return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
 }
 
 export function useWeb3() {
