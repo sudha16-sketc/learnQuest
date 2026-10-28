@@ -14,6 +14,7 @@ const GAME_STATES = {
   QUESTION_ACTIVE: 'QUESTION_ACTIVE',
   FEEDBACK: 'FEEDBACK',
   LEARNING_EXPLANATION: 'LEARNING_EXPLANATION',
+  LEVEL_BRIEFING: 'LEVEL_BRIEFING',
   LEVEL_COMPLETED: 'LEVEL_COMPLETED',
   LEVEL_FAILED: 'LEVEL_FAILED',
   PAUSED: 'PAUSED',
@@ -24,8 +25,9 @@ const GAME_STATES = {
 // State machine
 // ---------------------------------------------------------------------------
 const ALLOWED_TRANSITIONS = {
-  [GAME_STATES.MENU]: [GAME_STATES.TOPIC_SELECTION],
-  [GAME_STATES.TOPIC_SELECTION]: [GAME_STATES.LOADING_QUESTIONS, GAME_STATES.MENU],
+  [GAME_STATES.MENU]: [GAME_STATES.TOPIC_SELECTION, GAME_STATES.LEVEL_BRIEFING],
+  [GAME_STATES.TOPIC_SELECTION]: [GAME_STATES.LOADING_QUESTIONS, GAME_STATES.LEVEL_BRIEFING, GAME_STATES.MENU],
+  [GAME_STATES.LEVEL_BRIEFING]: [GAME_STATES.LOADING_QUESTIONS, GAME_STATES.TOPIC_SELECTION, GAME_STATES.MENU],
   [GAME_STATES.LOADING_QUESTIONS]: [GAME_STATES.PLAYING, GAME_STATES.TOPIC_SELECTION],
   [GAME_STATES.PLAYING]: [
     GAME_STATES.QUESTION_ACTIVE,
@@ -45,7 +47,7 @@ const ALLOWED_TRANSITIONS = {
     GAME_STATES.PLAYING,
     GAME_STATES.LEVEL_FAILED
   ],
-  [GAME_STATES.LEVEL_COMPLETED]: [GAME_STATES.TOPIC_SELECTION, GAME_STATES.PLAYING, GAME_STATES.MENU],
+  [GAME_STATES.LEVEL_COMPLETED]: [GAME_STATES.TOPIC_SELECTION, GAME_STATES.LEVEL_BRIEFING, GAME_STATES.PLAYING, GAME_STATES.MENU],
   [GAME_STATES.LEVEL_FAILED]: [GAME_STATES.TOPIC_SELECTION, GAME_STATES.PLAYING, GAME_STATES.MENU],
   [GAME_STATES.PAUSED]: [GAME_STATES.PLAYING, GAME_STATES.QUESTION_ACTIVE, GAME_STATES.MENU]
 };
@@ -74,75 +76,195 @@ class GameStateMachine {
 // ---------------------------------------------------------------------------
 // World generator
 // ---------------------------------------------------------------------------
-function generateLevelCourse(levelNumber, platformsCount) {
+function getQuestionCountForLevel(levelNumber) {
+  var count = 10 + Math.min(Math.max((levelNumber || 1) - 1, 0), 3);
+  return Math.min(Math.max(count, 10), 13);
+}
+
+function movingPlatformChance(levelNumber) {
+  return Math.min(0.12 + Math.max((levelNumber || 1) - 1, 0) * 0.06, 0.55);
+}
+
+function makePrng(seed) {
+  var s = seed >>> 0;
+  return function () {
+    s += 0x6d2b79f5;
+    var t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateLevelCourse(levelNumber) {
   levelNumber = levelNumber || 1;
-  platformsCount = platformsCount || 5;
   var platforms = [];
   var orbs = [];
   var clouds = [];
+  var rng = makePrng(levelNumber * 7919);
+  var questionCount = getQuestionCountForLevel(levelNumber);
 
   platforms.push({
     id: 'platform-start',
     index: 0,
     type: 'START',
-    title: 'Beginner Base',
+    title: 'Origin Platform',
     position: [0, 0, 0],
     size: [6, 1.2, 6],
-    color: '#3b82f6',
-    isCheckpoint: false
+    color: '#17985d',
+    isCheckpoint: false,
+    isMoving: false,
+    questionTriggered: false
   });
 
+  var platformIndex = 1;
   var currentPos = [0, 0, 0];
-  for (var i = 1; i <= platformsCount; i++) {
-    var isFinish = i === platformsCount;
-    var deltaX = Math.sin(i * 1.2) * 4;
-    var deltaY = Math.sin(i * 0.8) * 0.5 + i * 0.2;
-    var deltaZ = -(i * 9);
-    var platformPos = [deltaX, deltaY, deltaZ];
 
-    platforms.push({
-      id: isFinish ? 'platform-finish' : 'platform-checkpoint-' + i,
-      index: i,
-      type: isFinish ? 'FINISH' : 'CHECKPOINT',
-      title: isFinish ? 'Mastery Portal' : 'Knowledge Beacon ' + i,
-      position: platformPos,
-      size: isFinish ? [7, 1.4, 7] : [4.5, 1.0, 4.5],
-      color: isFinish ? '#10b981' : '#8b5cf6',
-      isCheckpoint: !isFinish,
-      checkpointNumber: isFinish ? null : i,
-      questionTriggered: false
-    });
+  for (var q = 0; q < questionCount; q++) {
+    for (var f = 0; f < 4; f++) {
+      var deltaX = Math.sin(platformIndex * 1.1 + levelNumber * 0.5) * 3.5;
+      var deltaY = Math.sin(platformIndex * 0.7) * 0.4 + platformIndex * 0.15;
+      var deltaZ = -(platformIndex * 8);
+      var pos = [deltaX, deltaY, deltaZ];
+      var moving = rng() < movingPlatformChance(levelNumber);
+      var movement = moving
+        ? {
+            isMoving: true,
+            movementAxis: rng() < 0.5 ? 'x' : 'z',
+            movementRange: 2.5 + rng() * 2.5,
+            movementSpeed: 1.0 + rng() * (levelNumber * 0.25)
+          }
+        : { isMoving: false };
 
-    if (!isFinish) {
+      platforms.push(Object.assign({
+        id: 'platform-filler-' + platformIndex,
+        index: platformIndex,
+        type: 'NORMAL',
+        title: null,
+        position: pos,
+        size: [3.5, 0.9, 3.5],
+        color: '#2d3a30',
+        isCheckpoint: false,
+        questionTriggered: false
+      }, movement));
+
       orbs.push({
-        id: 'orb-' + i,
+        id: 'orb-' + platformIndex,
         position: [
-          (currentPos[0] + platformPos[0]) / 2,
-          Math.max(currentPos[1], platformPos[1]) + 1.2,
-          (currentPos[2] + platformPos[2]) / 2
+          (currentPos[0] + pos[0]) / 2,
+          Math.max(currentPos[1], pos[1]) + 1.5,
+          (currentPos[2] + pos[2]) / 2
         ],
         value: 5,
         collected: false
       });
+
+      currentPos = pos;
+      platformIndex++;
     }
-    currentPos = platformPos;
+
+    var qDeltaX = Math.sin(platformIndex * 1.1 + levelNumber * 0.5) * 3.5;
+    var qDeltaY = Math.sin(platformIndex * 0.7) * 0.4 + platformIndex * 0.15;
+    var qDeltaZ = -(platformIndex * 8);
+    var qPos = [qDeltaX, qDeltaY, qDeltaZ];
+
+    platforms.push({
+      id: 'platform-question-' + (q + 1),
+      index: platformIndex,
+      type: 'CHECKPOINT',
+      title: 'Knowledge Gate ' + (q + 1),
+      position: qPos,
+      size: [5, 1.0, 5],
+      color: '#6d6499',
+      isCheckpoint: true,
+      checkpointNumber: q + 1,
+      questionTriggered: false,
+      isMoving: false
+    });
+
+    orbs.push({
+      id: 'orb-q-' + (q + 1),
+      position: [
+        (currentPos[0] + qPos[0]) / 2,
+        Math.max(currentPos[1], qPos[1]) + 1.5,
+        (currentPos[2] + qPos[2]) / 2
+      ],
+      value: 10,
+      collected: false
+    });
+
+    currentPos = qPos;
+    platformIndex++;
   }
 
-  for (var c = 0; c < 12; c++) {
-    var cloudAngle = (c / 12) * Math.PI * 2;
-    var distance = 25 + Math.sin(c) * 10;
+  var bossPos = [0, currentPos[1] + 2.0, currentPos[2] - 12];
+
+  platforms.push({
+    id: 'platform-boss',
+    index: platformIndex,
+    type: 'BOSS',
+    title: 'Boss Arena - Guardian Challenge',
+    position: bossPos,
+    size: [9, 1.8, 9],
+    color: '#dc2626',
+    isCheckpoint: true,
+    checkpointNumber: questionCount + 1,
+    questionTriggered: false,
+    isMoving: false,
+    isBoss: true
+  });
+
+  orbs.push({
+    id: 'orb-boss',
+    position: [
+      (currentPos[0] + bossPos[0]) / 2,
+      Math.max(currentPos[1], bossPos[1]) + 2,
+      (currentPos[2] + bossPos[2]) / 2
+    ],
+    value: 25,
+    collected: false
+  });
+
+  platformIndex++;
+
+  var finishPos = [0, bossPos[1] + 1.0, bossPos[2] - 10];
+  platforms.push({
+    id: 'platform-finish',
+    index: platformIndex,
+    type: 'FINISH',
+    title: 'Mastery Portal',
+    position: finishPos,
+    size: [7, 1.4, 7],
+    color: '#17985d',
+    isCheckpoint: false,
+    isMoving: false,
+    questionTriggered: false
+  });
+
+  for (var c = 0; c < 14; c++) {
+    var cloudAngle = (c / 14) * Math.PI * 2;
+    var distance = 30 + rng() * 15;
+    var spreadZ = -(platformIndex * 8) / 2;
     clouds.push({
       id: 'cloud-' + c,
       position: [
         Math.cos(cloudAngle) * distance,
-        -2 + Math.sin(c * 2) * 3,
-        Math.sin(cloudAngle) * distance - 20
+        -3 + rng() * 5,
+        spreadZ + Math.sin(cloudAngle) * distance
       ],
-      scale: 1.5 + Math.cos(c) * 0.8
+      scale: 1.2 + rng() * 1.2
     });
   }
 
-  return { levelNumber: levelNumber, platforms: platforms, orbs: orbs, clouds: clouds, startPosition: [0, 1.5, 0], fallThresholdY: -10 };
+  return {
+    levelNumber: levelNumber,
+    questionCount: questionCount,
+    platforms: platforms,
+    orbs: orbs,
+    clouds: clouds,
+    startPosition: [0, 1.5, 0],
+    fallThresholdY: -12
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -184,6 +306,7 @@ module.exports = {
   GAME_STATES: GAME_STATES,
   GameStateMachine: GameStateMachine,
   generateLevelCourse: generateLevelCourse,
+  getQuestionCountForLevel: getQuestionCountForLevel,
   GRAVITY: GRAVITY,
   JUMP_VELOCITY: JUMP_VELOCITY,
   MOVE_SPEED: MOVE_SPEED,

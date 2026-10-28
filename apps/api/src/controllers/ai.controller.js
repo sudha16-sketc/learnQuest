@@ -1,6 +1,7 @@
 import { aiService } from '../services/ai/index.js';
 import {
   QuestionGenerationRequestSchema,
+  BossQuestionRequestSchema,
   ExplanationRequestSchema,
   HintRequestSchema,
   RemedialQuestionRequestSchema
@@ -25,6 +26,20 @@ export async function generateQuestions(req, res, next) {
       success: true,
       data: result
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function generateBossQuestion(req, res, next) {
+  try {
+    const parse = BossQuestionRequestSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ success: false, error: parse.error.errors[0].message });
+    }
+
+    const question = await aiService.generateBossQuestion(parse.data);
+    res.json({ success: true, data: { question } });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   generateQuestions,
+  generateBossQuestion,
   generateExplanation,
   generateHint,
   generateRemedialQuestion,
@@ -12,6 +13,7 @@ const router = Router();
 
 router.get('/status', authenticate, getAIStatus);
 router.post('/questions', authenticate, generateQuestions);
+router.post('/boss-question', authenticate, generateBossQuestion);
 router.post('/explanations', authenticate, generateExplanation);
 router.post('/hints', authenticate, generateHint);
 router.post('/remedial', authenticate, generateRemedialQuestion);

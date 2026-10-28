@@ -8,6 +8,7 @@ process.env.GEMINI_API_KEY = '';
 process.env.NODE_ENV = 'test';
 
 const { default: app } = await import('../src/index.js');
+const { aiService } = await import('../src/services/ai/index.js');
 
 test('LearnQuest API integration tests (shared web/mobile contract)', async (t) => {
   let authToken = '';
@@ -106,6 +107,37 @@ test('LearnQuest API integration tests (shared web/mobile contract)', async (t) 
     assert.equal(res.body.data.source, 'curated_curriculum');
   });
 
+  await t.test('POST /api/ai/questions can issue a full 13-question level set', async () => {
+    const res = await request(app)
+      .post('/api/ai/questions')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ topic: 'Blockchain Fundamentals', difficulty: 'advanced', count: 13 });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.questions.length, 13);
+    const ids = new Set(res.body.data.questions.map(question => question.id));
+    assert.equal(ids.size, 13);
+    res.body.data.questions.forEach(question => {
+      assert.equal('correctOptionIndex' in question, false);
+      assert.equal(question.options.length, 4);
+    });
+  });
+
+  await t.test('POST /api/ai/boss-question returns a boss question without its answer key', async () => {
+    const res = await request(app)
+      .post('/api/ai/boss-question')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ levelNumber: 3, difficulty: 'intermediate' });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.question.isBoss, true);
+    assert.equal(res.body.data.question.id, 'q-boss-003');
+    assert.equal('correctOptionIndex' in res.body.data.question, false);
+    assert.equal(res.body.data.question.options.length, 4);
+  });
+
   await t.test('POST /api/ai/hints and explanations use a validated fallback', async () => {
     const hintRes = await request(app)
       .post('/api/ai/hints')
@@ -149,14 +181,20 @@ test('LearnQuest API integration tests (shared web/mobile contract)', async (t) 
     assert.equal(res.status, 409);
   });
 
-  await t.test('Incorrect answer returns the correct index, explanation, and no XP', async () => {
+  await t.test('Incorrect answer returns the shuffled correct index, explanation, and no XP', async () => {
+    // The server shuffles options deterministically per question. Read the
+    // authoritative shuffled answer key the same way validation does so this
+    // test never depends on the original authored option order.
+    const resolved = aiService.resolveQuestionAnswer('q-begin-002');
+    const chosenOption = (resolved.correctOptionIndex + 1) % resolved.options.length;
+
     const res = await request(app)
       .post(`/api/learning/sessions/${sessionId}/answers`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({
         questionId: 'q-begin-002',
         concept: 'hashing',
-        chosenOption: 2,
+        chosenOption,
         hintsUsed: 0,
         timeSpentMs: 3400,
         idempotencyKey: `wrong-${Date.now()}`
@@ -164,17 +202,18 @@ test('LearnQuest API integration tests (shared web/mobile contract)', async (t) 
 
     assert.equal(res.status, 200);
     assert.equal(res.body.isCorrect, false);
-    assert.equal(res.body.correctOptionIndex, 0);
+    assert.equal(res.body.correctOptionIndex, resolved.correctOptionIndex);
     assert.equal(res.body.xpAwarded, 0);
     assert.ok(res.body.explanation);
   });
 
   await t.test('Correct answer awards XP and enforces answer idempotency', async () => {
     const idempotencyKey = `idem-${Date.now()}`;
+    const resolved = aiService.resolveQuestionAnswer('q-begin-001');
     const answerPayload = {
       questionId: 'q-begin-001',
       concept: 'blocks',
-      chosenOption: 0,
+      chosenOption: resolved.correctOptionIndex,
       hintsUsed: 0,
       timeSpentMs: 4500,
       idempotencyKey
@@ -204,13 +243,14 @@ test('LearnQuest API integration tests (shared web/mobile contract)', async (t) 
   });
 
   await t.test('Duplicate submissions with a new idempotency key cannot farm XP', async () => {
+    const resolved = aiService.resolveQuestionAnswer('q-begin-001');
     const res = await request(app)
       .post(`/api/learning/sessions/${sessionId}/answers`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({
         questionId: 'q-begin-001',
         concept: 'blocks',
-        chosenOption: 0,
+        chosenOption: resolved.correctOptionIndex,
         hintsUsed: 0,
         timeSpentMs: 4500,
         idempotencyKey: `duplicate-${Date.now()}`

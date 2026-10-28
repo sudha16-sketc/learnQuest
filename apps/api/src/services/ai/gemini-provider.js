@@ -297,7 +297,7 @@ export class GeminiProvider extends IAIProvider {
   async generateQuestions({ topic, difficulty = 'beginner', learningObjective = '', count = 3 }) {
     const cleanTopic = this.sanitizeInput(topic, 120);
     const cleanObjective = this.sanitizeInput(learningObjective, 180);
-    const safeCount = Math.min(Math.max(Number(count) || 3, 1), 10);
+    const safeCount = Math.min(Math.max(Number(count) || 3, 1), 13);
 
     const systemInstruction = `You are an expert interactive educational game AI for LearnQuest.
 Create accurate, original multiple-choice questions. Never include markdown or commentary.

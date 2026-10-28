@@ -18,8 +18,7 @@ LearnQuest transforms computer science and blockchain education into an interact
 - **MST Blockchain Integration:** Verified EVM testnet integration (Chain ID: `91562037`, RPC: `https://testnetrpc.mstblockchain.com`) with OpenZeppelin smart contracts.
 - **Dual-Token Reward Economy:** Clean separation between off-chain durable Gameplay XP and on-chain Utility Tokens (`LQST`), protected by cryptographic **EIP-712** signed reward vouchers.
 - **Cosmetics & Store:** Token-priced in-game store featuring Cyber Neon Auras, Cosmic Scholar Hats, and Stardust Jump Trails that visibly render on your 3D explorer.
-- **Cross-Platform:** Shared Express API backend powering both the React Web app and the Expo React Native mobile app.
-- **Expo Android Build Config:** EAS profiles for `.apk` and `.aab` output. Building requires an authenticated Expo account and an EAS project ID.
+- **Web Platform:** React Web app with Express API backend powering gameplay, AI, rewards, and blockchain flows.
 
 ---
 
@@ -29,7 +28,6 @@ LearnQuest transforms computer science and blockchain education into an interact
 learnquest/
   apps/
     web/                  # React, Vite, Three.js, React Three Fiber, GSAP, Tailwind
-    mobile/               # React Native, Expo SDK 58, Three.js R3F, EAS Build config
     api/                  # Express.js REST API, Prisma, AI Service, Voucher Signer
   packages/
     shared/               # Network configs, game states, XP economy constants
@@ -122,33 +120,9 @@ npm run dev:api
 
 # Start Web 3D Frontend (Port 3000)
 npm run dev:web
-
-# Start Mobile Expo App
-npm run dev:mobile
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 📱 Mobile Build Instructions (Expo EAS)
-
-Detailed guide available at [`docs/MOBILE_EAS_BUILD.md`](docs/MOBILE_EAS_BUILD.md). You must run `eas login` and configure an EAS project ID before these commands can produce artifacts.
-
-### 1. Generate Installable Android APK (Direct Physical Device Testing)
-
-```bash
-cd apps/mobile
-eas build -p android --profile preview
-```
-Download the resulting `.apk` from the Expo dashboard and install directly onto your Android device.
-
-### 2. Generate Android App Bundle (AAB) for Google Play Store
-
-```bash
-cd apps/mobile
-eas build -p android --profile production
-```
 
 ---
 
@@ -161,9 +135,7 @@ eas build -p android --profile production
 | **Curated AI Fallback** | Node Test Runner | **PASS** | Degraded responses are labeled `curated_curriculum` with answer keys held server-side |
 | **Live Gemini Inference** | Real API call | **NOT RUN** | Requires a valid `GEMINI_API_KEY`, which is not present in this environment |
 | **Web Production Build** | Vite | **PASS** | `npm run build:web` succeeds (large-chunk warning only) |
-| **Mobile Android Bundle** | Expo/Metro | **PASS** | `npx expo export --platform android` succeeds; native APK/AAB not built here |
 | **MetaMask / On-Chain Claims** | Live wallet + MST RPC | **NOT RUN** | Requires a funded browser wallet and deployed contracts |
-| **EAS APK/AAB Build** | EAS Build | **NOT RUN** | Requires Expo login, EAS project ID, and build credentials |
 
 ---
 

@@ -1,12 +1,65 @@
 import { config } from '../../config/index.js';
 import { GeminiProvider, AIProviderError } from './gemini-provider.js';
-import { CuratedProvider, CURATED_BLOCKCHAIN_CURRICULUM } from './curated-provider.js';
+import {
+  CuratedProvider,
+  CURATED_BLOCKCHAIN_CURRICULUM,
+  CURATED_BOSS_QUESTIONS,
+  getBossQuestion
+} from './curated-provider.js';
 
 const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_CACHE_MAX_ENTRIES = 200;
 
 function clone(value) {
   return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+}
+
+/**
+ * Deterministic Fisher-Yates shuffle using a simple seeded PRNG derived from
+ * the question id string. This guarantees the same shuffle for the same
+ * question every time (stable across server restarts) while keeping correct
+ * answer position unpredictable to clients.
+ */
+function seededRandom(seed) {
+  // Convert string seed to a 32-bit integer via djb2 hash
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) + h) ^ seed.charCodeAt(i);
+    h = h >>> 0; // keep unsigned 32-bit
+  }
+  // Mulberry32 PRNG
+  return function () {
+    h += 0x6d2b79f5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleQuestionOptions(question) {
+  if (
+    !question ||
+    !Array.isArray(question.options) ||
+    !Number.isInteger(question.correctOptionIndex)
+  ) {
+    return question;
+  }
+
+  const options = [...question.options];
+  const rand = seededRandom(String(question.id));
+  const indices = options.map((_, i) => i);
+
+  // Fisher-Yates shuffle using seeded PRNG
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  const shuffledOptions = indices.map(i => options[i]);
+  const newCorrectIndex = indices.indexOf(question.correctOptionIndex);
+
+  return { ...question, options: shuffledOptions, correctOptionIndex: newCorrectIndex };
 }
 
 function publicQuestion(question) {
@@ -62,6 +115,11 @@ function curatedLookup(questionId) {
     const match = pool.find(question => question.id === questionId);
     if (match) return clone(match);
   }
+  for (const boss of Object.values(CURATED_BOSS_QUESTIONS)) {
+    if (boss.id === questionId) return clone(boss);
+  }
+  const bossMatch = /^q-boss-(\d+)$/.exec(questionId);
+  if (bossMatch) return clone(getBossQuestion(Number(bossMatch[1])));
   return null;
 }
 
@@ -155,10 +213,13 @@ export class AIService {
   registerQuestions(questions, { rewriteIds = false } = {}) {
     const batchTag = `${this.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
     return questions.map((question, index) => {
-      const normalized = {
+      const withId = {
         ...question,
         id: rewriteIds ? `q-g-${batchTag}-${index + 1}` : question.id
       };
+      // Shuffle options deterministically so the correct answer is never always index 0.
+      // The shuffled correctOptionIndex is what gets stored server-side for validation.
+      const normalized = shuffleQuestionOptions(withId);
       this.questionBank.set(normalized);
       return normalized;
     });
@@ -167,7 +228,12 @@ export class AIService {
   resolveQuestionAnswer(questionId) {
     const fromBank = this.questionBank.get(questionId);
     if (fromBank) return fromBank;
-    return curatedLookup(questionId);
+
+    // The bank entry may have expired while a client still holds the issued
+    // (already shuffled) question. Re-derive the exact same deterministic
+    // shuffle so validation stays aligned with what the client displayed.
+    const curated = curatedLookup(questionId);
+    return curated ? shuffleQuestionOptions(curated) : null;
   }
 
   async generateQuestions({ topic, difficulty = 'beginner', learningObjective, count = 3 }) {
@@ -187,6 +253,24 @@ export class AIService {
           count
         });
         const questions = this.registerQuestions(result.questions, { rewriteIds: true });
+
+        // Gemini occasionally returns fewer items than requested. Top up from
+        // the curated pool so every level always has its full question set.
+        if (questions.length < count) {
+          const usedText = new Set(questions.map(question => question.question));
+          const fallback = await this.curatedProvider.generateQuestions({
+            topic,
+            difficulty,
+            count: Math.min(CURATED_BLOCKCHAIN_CURRICULUM[difficulty]?.length || count, count + usedText.size)
+          });
+          const extras = fallback.questions
+            .filter(question => !usedText.has(question.question))
+            .slice(0, count - questions.length);
+          if (extras.length) {
+            questions.push(...this.registerQuestions(extras, { rewriteIds: true }));
+          }
+        }
+
         const payload = { ...result, questions: questions.map(publicQuestion) };
         this.setCached(cacheKey, payload);
         this.lastGeminiError = null;
@@ -212,6 +296,18 @@ export class AIService {
     };
     this.setCached(cacheKey, payload);
     return payload;
+  }
+
+  async generateBossQuestion({ levelNumber = 1 }) {
+    const result = await this.curatedProvider.generateBossQuestion({ levelNumber });
+    const [question] = this.registerQuestions([result]);
+    return {
+      ...publicQuestion(question),
+      source: 'curated_curriculum',
+      degraded: true,
+      fallbackReason: this.lastGeminiError?.code || 'AI_UNAVAILABLE',
+      isBoss: true
+    };
   }
 
   async generateExplanation({ concept, chosenAnswer, correctAnswer }) {
@@ -270,3 +366,5 @@ export class AIService {
 }
 
 export const aiService = new AIService();
+
+export { shuffleQuestionOptions, publicQuestion };

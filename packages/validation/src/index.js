@@ -26,7 +26,7 @@ export const QuestionGenerationRequestSchema = z.object({
   topic: z.string().min(2),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
   learningObjective: z.string().optional(),
-  count: z.number().int().min(1).max(10).default(3)
+  count: z.number().int().min(1).max(13).default(3)
 });
 
 export const QuestionItemSchema = z.object({
@@ -44,7 +44,13 @@ export const QuestionItemSchema = z.object({
 export const QuestionGenerationResponseSchema = z.object({
   topic: z.string(),
   difficulty: z.string(),
-  questions: z.array(QuestionItemSchema).min(1).max(10)
+  questions: z.array(QuestionItemSchema).min(1).max(13)
+});
+
+export const BossQuestionRequestSchema = z.object({
+  levelNumber: z.number().int().min(1).max(999),
+  topic: z.string().min(2).optional(),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional()
 });
 
 export const ExplanationResponseSchema = z.object({

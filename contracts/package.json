@@ -5,7 +5,9 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
-    "deploy:mst": "hardhat run scripts/deploy.js --network mstTestnet"
+    "deploy:mst": "hardhat run scripts/deploy.js --network mstTestnet",
+    "issue:achievement": "hardhat run scripts/issue-achievement.js --network mstTestnet",
+    "verify:achievement": "hardhat run scripts/verify-achievement.js --network mstTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",

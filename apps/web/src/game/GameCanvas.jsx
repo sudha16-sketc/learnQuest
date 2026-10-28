@@ -7,13 +7,14 @@ export function GameCanvas({
   onCheckpointReached,
   onOrbCollected,
   onFallRespawn,
+  paused = false,
   equippedAccessories = []
 }) {
   return (
-    <div className="w-full h-full relative cursor-grab active:cursor-grabbing select-none">
+    <div className="w-full h-full relative cursor-grab active:cursor-grabbing select-none touch-none">
       <Canvas
         shadows
-        camera={{ position: [0, 5, 10], fov: 60 }}
+        camera={{ position: [0, 5, 10], fov: 70 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: false }}
       >
@@ -23,6 +24,7 @@ export function GameCanvas({
             onCheckpointReached={onCheckpointReached}
             onOrbCollected={onOrbCollected}
             onFallRespawn={onFallRespawn}
+            paused={paused}
             equippedAccessories={equippedAccessories}
           />
         </Suspense>

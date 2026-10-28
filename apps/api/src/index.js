@@ -13,6 +13,8 @@ import aiRoutes from './routes/ai.routes.js';
 import rewardsRoutes from './routes/rewards.routes.js';
 import storeRoutes from './routes/store.routes.js';
 import blockchainRoutes from './routes/blockchain.routes.js';
+import achievementsRoutes from './routes/achievements.routes.js';
+import sponsorsRoutes from './routes/sponsors.routes.js';
 import { getTopics } from './controllers/learning.controller.js';
 import { aiService } from './services/ai/index.js';
 
@@ -71,6 +73,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/blockchain', blockchainRoutes);
+app.use('/api/achievements', achievementsRoutes);
+app.use('/api/sponsors', sponsorsRoutes);
 
 // Error handler
 app.use(errorHandler);

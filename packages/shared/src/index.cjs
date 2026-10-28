@@ -2,6 +2,8 @@
 // The ESM .js files are used by the web/Node build; the .cjs files are used by Metro.
 'use strict';
 
+const { LEVEL_BRIEFINGS, getLevelBriefing } = require('./level-briefings.cjs');
+
 const MST_NETWORKS = {
   TESTNET: {
     name: 'MST Testnet',
@@ -35,6 +37,7 @@ const GAME_STATES = {
   QUESTION_ACTIVE: 'QUESTION_ACTIVE',
   FEEDBACK: 'FEEDBACK',
   LEARNING_EXPLANATION: 'LEARNING_EXPLANATION',
+  LEVEL_BRIEFING: 'LEVEL_BRIEFING',
   LEVEL_COMPLETED: 'LEVEL_COMPLETED',
   LEVEL_FAILED: 'LEVEL_FAILED',
   PAUSED: 'PAUSED',
@@ -132,4 +135,6 @@ module.exports = {
   XP_ECONOMY,
   DEFAULT_TOPICS,
   ACCESSORIES_CATALOG,
+  LEVEL_BRIEFINGS,
+  getLevelBriefing,
 };

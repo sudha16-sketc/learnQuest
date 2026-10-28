@@ -52,3 +52,4 @@ Thumbs.db
 *.keystore
 *.jks
 .neon
+contracts/.env

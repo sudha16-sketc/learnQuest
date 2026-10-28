@@ -74,8 +74,8 @@ export function QuestionOverlay({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0d1410]/90 pointer-events-auto select-none">
-      <div className="w-full max-w-xl bg-[#0d1410] border-2 border-[#17985d] p-6 sm:p-8 overflow-hidden relative">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-[#0d1410]/95 pointer-events-auto select-none overflow-y-auto">
+      <div className="w-full h-full max-h-full sm:max-h-[95vh] sm:max-w-3xl bg-[#0d1410] border-2 border-[#17985d] p-4 sm:p-8 overflow-y-auto relative flex flex-col">
         {/* Header: Concept & Beacon Number */}
         <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-[#17985d]/30 font-mono">
           <div className="flex items-center gap-2">

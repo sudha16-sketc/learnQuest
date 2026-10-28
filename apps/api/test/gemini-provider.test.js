@@ -183,7 +183,8 @@ test('AIService strips answer keys, registers them server-side, and caches batch
   assert.match(first.questions[0].id, /^q-g-/);
 
   const answer = service.resolveQuestionAnswer(first.questions[0].id);
-  assert.equal(answer.correctOptionIndex, 0);
+  assert.ok(answer.correctOptionIndex >= 0 && answer.correctOptionIndex <= 3);
+  assert.equal(answer.options[answer.correctOptionIndex], 'Previous block hash');
   assert.equal(answer.options.length, 4);
 
   const second = await service.generateQuestions({

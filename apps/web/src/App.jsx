@@ -4,7 +4,7 @@ import { Navbar } from './components/Navbar';
 import { HUD } from './components/HUD';
 import { QuestionOverlay } from './components/QuestionOverlay';
 import { LevelCompleteModal } from './components/LevelCompleteModal';
-import { MobileControls } from './components/MobileControls';
+
 
 import { LandingScreen } from './screens/LandingScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
@@ -317,7 +317,7 @@ export function App() {
             equippedAccessories={equippedAccessories}
           />
 
-          <MobileControls />
+
         </>
       )}
 

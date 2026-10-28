@@ -144,6 +144,13 @@ class ApiService {
     });
   }
 
+  async generateBossQuestion(levelNumber) {
+    return this.request('/api/ai/boss-question', {
+      method: 'POST',
+      body: JSON.stringify({ levelNumber })
+    });
+  }
+
   async generateHint(concept, question) {
     return this.request('/api/ai/hints', {
       method: 'POST',
@@ -207,6 +214,76 @@ class ApiService {
     return this.request('/api/blockchain/achievements/confirm', {
       method: 'POST',
       body: JSON.stringify({ achievementType, transactionHash })
+    });
+  }
+
+  async getAvailableAchievements() {
+    return this.request('/api/achievements');
+  }
+
+  async getMyAchievements() {
+    return this.request('/api/achievements/me');
+  }
+
+  async checkAchievementEligibility(achievementType, assessmentData = {}) {
+    return this.request('/api/achievements/eligibility', {
+      method: 'POST',
+      body: JSON.stringify({ achievementType, assessmentData })
+    });
+  }
+
+  async issueAchievement(achievementType, assessmentData = {}, transactionHash = null) {
+    return this.request('/api/achievements/issue', {
+      method: 'POST',
+      body: JSON.stringify({ achievementType, assessmentData, transactionHash })
+    });
+  }
+
+  async verifyAchievement(achievementType, studentAddress, transactionHash) {
+    return this.request('/api/achievements/verify', {
+      method: 'POST',
+      body: JSON.stringify({ achievementType, studentAddress, transactionHash })
+    });
+  }
+
+  async getSponsoredChallenges(status = 'active') {
+    return this.request(`/api/sponsors/challenges?status=${status}`);
+  }
+
+  async getSponsoredChallenge(id) {
+    return this.request(`/api/sponsors/challenges/${id}`);
+  }
+
+  async createSponsoredChallenge(challengeData) {
+    return this.request('/api/sponsors/challenges', {
+      method: 'POST',
+      body: JSON.stringify(challengeData)
+    });
+  }
+
+  async checkChallengeEligibility(id, userData = {}) {
+    return this.request(`/api/sponsors/challenges/${id}/eligibility`, {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+  }
+
+  async submitChallenge(id, submissionData = {}) {
+    return this.request(`/api/sponsors/challenges/${id}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(submissionData)
+    });
+  }
+
+  async getChallengeSubmissions(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/api/sponsors/submissions${params ? '?' + params : ''}`);
+  }
+
+  async evaluateChallengeSubmission(submissionId, evaluation) {
+    return this.request(`/api/sponsors/submissions/${submissionId}/evaluate`, {
+      method: 'POST',
+      body: JSON.stringify(evaluation)
     });
   }
 }

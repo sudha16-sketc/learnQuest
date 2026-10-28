@@ -48,18 +48,16 @@ graph TD
 ```
 learnquest/
   apps/
-    web/                  # React, Vite, Three.js, React Three Fiber, GSAP, Tailwind
-    mobile/               # React Native, Expo, Three.js R3F, EAS APK/AAB config
-    api/                  # Express.js REST API, Prisma, AI Service, Voucher Signer
+    web/                  # React, Vite, Three.js, React Three Fiber, GSAP, Tailwind CSS
+    api/                  # Express.js REST API, Prisma ORM, AI Service, Voucher Signer (EIP-712)
   packages/
-    shared/               # Network configs, game states, XP economy constants
+    shared/               # Config, constants, network configs, game states, XP economy
     game-core/            # Pure game state machine, physics, course generator
-    contracts-client/     # Contract ABIs, EIP-712 typed voucher utilities
-    validation/           # Zod schemas for auth, AI outputs, learning sessions
-  contracts/              # Hardhat, Solidity 0.8.24, OpenZeppelin 5.2, Tests
-  prisma/
-    schema.prisma         # Normalized database models & relationships
-  docs/                   # Architecture, MST Blockchain, Gemini, EAS Build guides
+    contracts-client/     # ABIs, EIP-712 typed voucher utilities, contract addresses
+    validation/           # Zod schemas for auth, AI outputs, learning, rewards, store
+  contracts/              # Hardhat, Solidity 0.8.24, OpenZeppelin 5.2
+  prisma/                 # Schema, migrations, generated client
+  docs/                   # Architecture, MST Blockchain, Gemini guides
   docker-compose.yml      # PostgreSQL and API container definitions
   .env.example            # Environment variables template
   package.json            # Monorepo npm workspaces definition

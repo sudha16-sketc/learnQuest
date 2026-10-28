@@ -11,7 +11,6 @@
   "scripts": {
     "dev:api": "npm --workspace=@learnquest/api run dev",
     "dev:web": "npm --workspace=@learnquest/web run dev",
-    "dev:mobile": "npm --workspace=@learnquest/mobile run start",
     "build": "npm run build:packages && npm run build:web",
     "build:packages": "npm --workspace=@learnquest/shared run build && npm --workspace=@learnquest/game-core run build",
     "build:web": "npm --workspace=@learnquest/web run build",
@@ -36,7 +35,6 @@
   "author": "LearnQuest Team",
   "license": "MIT",
   "devDependencies": {
-    "expo-doctor": "^1.21.5",
     "prisma": "^5.14.0"
   },
   "optionalDependencies": {
@@ -44,6 +42,8 @@
     "@rollup/rollup-win32-x64-msvc": "^4.65.1"
   },
   "dependencies": {
+    "@mstblockchain/mst-sdk": "^1.0.0",
+    "@mstblockchain/mst-vibe-kit": "^0.1.1",
     "@neon/config": "^1.9.3",
     "@neon/env": "^1.6.4"
   }

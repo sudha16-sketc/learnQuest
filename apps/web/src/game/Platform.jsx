@@ -19,6 +19,7 @@ export function Platform({ platform, isCurrentTarget = false }) {
   const isStart = platform.type === 'START';
   const isFinish = platform.type === 'FINISH';
   const isCheckpoint = platform.isCheckpoint;
+  const isBoss = platform.type === 'BOSS' || platform.isBoss;
 
   return (
     <group position={platform.position}>
@@ -26,8 +27,9 @@ export function Platform({ platform, isCurrentTarget = false }) {
       <mesh position={[0, 0, 0]} receiveShadow castShadow>
         <boxGeometry args={[width, height * 0.4, depth]} />
         <meshStandardMaterial
-          color={isFinish ? '#059669' : isStart ? '#2563eb' : '#4f46e5'}
+          color={isBoss ? '#dc2626' : isFinish ? '#059669' : isStart ? '#2563eb' : '#4f46e5'}
           roughness={0.6}
+          metalness={isBoss ? 0.3 : 0}
         />
       </mesh>
 
@@ -38,7 +40,7 @@ export function Platform({ platform, isCurrentTarget = false }) {
       </mesh>
 
       {/* Glowing Checkpoint Beacon / Crystal */}
-      {isCheckpoint && (
+      {(isCheckpoint && !isBoss) && (
         <group ref={crystalRef} position={[0, height * 0.8 + 0.6, 0]}>
           <mesh castShadow>
             <octahedronGeometry args={[0.55]} />
@@ -50,6 +52,28 @@ export function Platform({ platform, isCurrentTarget = false }) {
             />
           </mesh>
           <pointLight color="#c084fc" intensity={2.5} distance={6} />
+        </group>
+      )}
+      {isBoss && (
+        <group ref={crystalRef} position={[0, height * 0.8 + 1.0, 0]}>
+          <mesh castShadow>
+            <octahedronGeometry args={[0.9]} />
+            <meshStandardMaterial
+              color="#fca5a5"
+              emissive="#ef4444"
+              emissiveIntensity={2.0}
+              roughness={0.1}
+            />
+          </mesh>
+          <mesh position={[0, 0.3, 0]} castShadow>
+            <octahedronGeometry args={[0.6]} />
+            <meshStandardMaterial
+              color="#fee2e2"
+              emissive="#f87171"
+              emissiveIntensity={1.8}
+            />
+          </mesh>
+          <pointLight color="#ef4444" intensity={4.5} distance={12} />
         </group>
       )}
 

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
@@ -10,11 +10,31 @@ import {
 } from '@learnquest/game-core';
 import { useControls } from './useControls';
 
+/**
+ * Returns the platform's live position. Moving platforms use the shared
+ * R3F clock so rendering and collision always agree.
+ */
+function getPlatformPosition(platform, elapsedTime) {
+  if (!platform.isMoving) return platform.position;
+  const axis = platform.movementAxis || 'x';
+  const range = platform.movementRange || 3;
+  const speed = platform.movementSpeed || 1;
+  const offset = Math.sin(elapsedTime * speed) * range;
+  const [x, y, z] = platform.position;
+  if (axis === 'x') return [x + offset, y, z];
+  if (axis === 'y') return [x, y + offset, z];
+  return [x, y, z + offset];
+}
+
 export function Player({
   courseData,
+  clockRef,
+  hiddenPlatformIds,
+  onPlatformLanded,
   onCheckpointReached,
   onOrbCollected,
   onFallRespawn,
+  paused = false,
   equippedAccessories = []
 }) {
   const meshRef = useRef();
@@ -28,21 +48,66 @@ export function Player({
   const lastSafePosition = useRef(courseData.startPosition);
   const currentPlatformIndex = useRef(0);
   const animationTime = useRef(0);
+  const jumpLatch = useRef(false);
+  const lastPlatformId = useRef(null);
+  const ridingPlatformId = useRef(null);
+  const lastPlatformPos = useRef(null);
 
   // Accessories flags
   const hasNeonAura = equippedAccessories.some(a => a.sku === 'cosmetic-neon-aura');
   const hasScholarHat = equippedAccessories.some(a => a.sku === 'cosmetic-wizard-hat');
   const hasSparkTrail = equippedAccessories.some(a => a.sku === 'cosmetic-spark-trail');
 
+  useEffect(() => {
+    setPosition(courseData.startPosition);
+    velocityY.current = 0;
+    isGrounded.current = true;
+    lastSafePosition.current = [...courseData.startPosition];
+    currentPlatformIndex.current = 0;
+    animationTime.current = 0;
+    jumpLatch.current = false;
+    lastPlatformId.current = null;
+    ridingPlatformId.current = null;
+    lastPlatformPos.current = null;
+    if (meshRef.current) {
+      meshRef.current.position.set(...courseData.startPosition);
+    }
+  }, [courseData]);
+
   useFrame((state, delta) => {
     if (!meshRef.current) return;
 
-    animationTime.current += delta;
     const clampedDelta = Math.min(delta, 0.1);
+    const elapsed = clockRef?.current?.elapsed ?? state.clock.elapsedTime;
+
+    if (paused) {
+      // Keep the animation gentle but freeze physical movement.
+      return;
+    }
+
+    animationTime.current += clampedDelta;
 
     let [px, py, pz] = position;
     let dx = 0;
     let dz = 0;
+
+    // Ride moving platforms by applying their frame-to-frame delta.
+    if (isGrounded.current && ridingPlatformId.current) {
+      const ride = courseData.platforms.find(p => p.id === ridingPlatformId.current);
+      if (ride && ride.isMoving) {
+        const liveRidePos = getPlatformPosition(ride, elapsed);
+        const previousRidePos = lastPlatformPos.current;
+        if (previousRidePos) {
+          px += liveRidePos[0] - previousRidePos[0];
+          py += liveRidePos[1] - previousRidePos[1];
+          pz += liveRidePos[2] - previousRidePos[2];
+        }
+        lastPlatformPos.current = liveRidePos;
+      } else {
+        ridingPlatformId.current = null;
+        lastPlatformPos.current = null;
+      }
+    }
 
     // Handle horizontal movement
     if (controls.forward) dz -= MOVE_SPEED * clampedDelta;
@@ -50,11 +115,13 @@ export function Player({
     if (controls.left) dx -= MOVE_SPEED * clampedDelta;
     if (controls.right) dx += MOVE_SPEED * clampedDelta;
 
-    // Handle jump
-    if (controls.jump && isGrounded.current) {
+    // Handle jump edge-triggered so held buttons do not auto-bounce
+    const wantsJump = Boolean(controls.jump);
+    if (wantsJump && isGrounded.current && !jumpLatch.current) {
       velocityY.current = JUMP_VELOCITY;
       isGrounded.current = false;
     }
+    jumpLatch.current = wantsJump;
 
     // Apply gravity
     velocityY.current += GRAVITY * clampedDelta;
@@ -62,26 +129,35 @@ export function Player({
     px += dx;
     pz += dz;
 
-    // Check collision with all platforms
+    // Check collision with all non-hidden platforms using live positions
     let landed = false;
     for (const platform of courseData.platforms) {
-      const check = checkPlatformLanding([px, py, pz], velocityY.current, platform);
+      if (hiddenPlatformIds && hiddenPlatformIds.has(platform.id)) continue;
+      const livePlatform = {
+        ...platform,
+        position: getPlatformPosition(platform, elapsed)
+      };
+      const check = checkPlatformLanding([px, py, pz], velocityY.current, livePlatform);
       if (check.landed) {
         landed = true;
         py = check.surfaceY;
         velocityY.current = 0;
         isGrounded.current = true;
-        lastSafePosition.current = [platform.position[0], check.surfaceY, platform.position[2]];
+        const livePos = livePlatform.position;
+        lastSafePosition.current = [livePos[0], check.surfaceY, livePos[2]];
+        ridingPlatformId.current = platform.id;
+        lastPlatformPos.current = livePos;
 
-        // Trigger checkpoint question if this platform is a checkpoint and hasn't been solved
-        if (platform.isCheckpoint && currentPlatformIndex.current !== platform.index) {
+        // Notify cleanup whenever we land on a new platform
+        if (lastPlatformId.current !== platform.id) {
+          lastPlatformId.current = platform.id;
+          if (onPlatformLanded) onPlatformLanded(platform);
+        }
+
+        // Trigger checkpoint/boss/finish only when it's a new platform
+        if (currentPlatformIndex.current !== platform.index) {
           currentPlatformIndex.current = platform.index;
-          if (onCheckpointReached) {
-            onCheckpointReached(platform);
-          }
-        } else if (platform.type === 'FINISH' && currentPlatformIndex.current !== platform.index) {
-          currentPlatformIndex.current = platform.index;
-          if (onCheckpointReached) {
+          if ((platform.isCheckpoint || platform.type === 'BOSS' || platform.type === 'FINISH') && onCheckpointReached) {
             onCheckpointReached(platform);
           }
         }
@@ -91,29 +167,28 @@ export function Player({
 
     if (!landed) {
       isGrounded.current = false;
+      ridingPlatformId.current = null;
+      lastPlatformPos.current = null;
     }
 
     // Fall recovery and respawn
     if (py < courseData.fallThresholdY) {
-      // Player fell into the abyss! Respawn at last visited platform
       const [rx, ry, rz] = lastSafePosition.current;
       px = rx;
       py = ry + 1.5;
       pz = rz;
       velocityY.current = 0;
       isGrounded.current = true;
-      if (onFallRespawn) {
-        onFallRespawn();
-      }
+      ridingPlatformId.current = null;
+      lastPlatformPos.current = null;
+      if (onFallRespawn) onFallRespawn();
     }
 
     // Check collection of XP Orbs
     for (const orb of courseData.orbs) {
       if (!orb.collected && checkOrbCollision([px, py, pz], orb)) {
         orb.collected = true;
-        if (onOrbCollected) {
-          onOrbCollected(orb);
-        }
+        if (onOrbCollected) onOrbCollected(orb);
       }
     }
 
@@ -146,14 +221,14 @@ export function Player({
       hatRef.current.rotation.y += delta * 0.8;
     }
 
-    // Camera follow smoothly behind player
+    // Third-person camera: behind and slightly above the player, aiming forward.
     const targetCamX = px;
-    const targetCamY = py + 4.5;
-    const targetCamZ = pz + 9.0;
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, targetCamX, 0.08);
-    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetCamY, 0.08);
-    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetCamZ, 0.08);
-    state.camera.lookAt(px, py + 1.2, pz);
+    const targetCamY = py + 5.0;
+    const targetCamZ = pz + 10.5;
+    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, targetCamX, 0.1);
+    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetCamY, 0.1);
+    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetCamZ, 0.1);
+    state.camera.lookAt(px, py + 1.6, pz);
   });
 
   return (
