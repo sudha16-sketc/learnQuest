@@ -12,7 +12,6 @@ import {
 export function Navbar({
   onOpenStore,
   onOpenWallet,
-  onOpenConnectWallet,
   onOpenAchievements,
   onOpenDashboard,
   onOpenTOS,
@@ -101,7 +100,7 @@ export function Navbar({
           </button>
         ) : (
             <button
-              onClick={onOpenConnectWallet || onOpenWallet}
+              onClick={onOpenWallet}
               className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0d1410] border border-[#6d6499] hover:bg-[#6d6499]/10"
             >
               <IconWallet className="w-3.5 h-3.5 text-[#6d6499]" />

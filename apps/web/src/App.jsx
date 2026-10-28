@@ -13,8 +13,6 @@ import { WalletModal } from './screens/WalletModal';
 import { AchievementsModal } from './screens/AchievementsModal';
 import { AuthModal } from './screens/AuthModal';
 import { LegalModal } from './screens/LegalModal';
-import { ConnectWalletModal } from './components/ConnectWalletModal';
-
 import { generateLevelCourse } from '@learnquest/game-core';
 import { GAME_STATES, ACCESSORIES_CATALOG } from '@learnquest/shared';
 import { api } from './services/api';
@@ -23,8 +21,7 @@ import { useWeb3 } from './context/Web3Context';
 
 export function App() {
   const { user, loading: authLoading } = useAuth();
-  const { account, connectWallet, providers, isConnecting, error: web3Error } = useWeb3();
-  const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false);
+  const { account } = useWeb3();
 
   // Explicit Game State
   const [gameState, setGameState] = useState(GAME_STATES.MENU);
@@ -270,7 +267,6 @@ export function App() {
         onOpenPrivacy={() => setLegalModalDoc('privacy')}
         gameplayXP={gameplayXP}
         pendingTokens={pendingTokens}
-        onOpenConnectWallet={() => setIsConnectWalletOpen(true)}
       />
 
       {gameError && (
@@ -357,19 +353,6 @@ export function App() {
       />
 
       {/* MetaMask & MST Wallet Modal */}
-      <ConnectWalletModal
-        isOpen={isConnectWalletOpen}
-        onClose={() => setIsConnectWalletOpen(false)}
-        providers={providers}
-        connecting={isConnecting}
-        error={web3Error}
-        onSelect={async (wallet) => {
-          await connectWallet(wallet);
-          setIsConnectWalletOpen(false);
-          setIsWalletOpen(true);
-        }}
-      />
-
       <WalletModal
         isOpen={isWalletOpen}
         onClose={() => setIsWalletOpen(false)}
