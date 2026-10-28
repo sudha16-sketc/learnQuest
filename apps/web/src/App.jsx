@@ -259,7 +259,7 @@ export function App() {
   );
 
   return (
-    <div className={`w-full min-h-screen bg-[#0d1410] text-[#d2fcf8] relative ${isPlayingGame ? 'h-screen overflow-hidden' : ''}`}>
+    <div className={`w-full min-h-screen bg-[#0d1410] text-[#d2fcf8] relative overflow-x-hidden ${isPlayingGame ? 'h-screen overflow-hidden touch-none' : 'overflow-y-auto'}`}>
       {/* Persistent Navbar */}
       <Navbar
         onOpenStore={() => setIsStoreOpen(true)}
