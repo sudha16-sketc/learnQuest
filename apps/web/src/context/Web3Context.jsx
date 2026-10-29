@@ -107,10 +107,8 @@ export function Web3Provider({ children }) {
 
   const getActiveProvider = useCallback(() => {
     if (selectedProvider) return selectedProvider;
-    const preferred = getPreferredWalletId();
-    const p = getProviderById(providers, preferred) || providers[0];
-    return p?.provider || null;
-  }, [selectedProvider, providers]);
+    return null;
+  }, [selectedProvider]);
 
   const disconnectWallet = useCallback(() => {
     try {

@@ -102,6 +102,7 @@ export function Navbar({
             <button
               onClick={onOpenWallet}
               className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0d1410] border border-[#6d6499] hover:bg-[#6d6499]/10"
+              aria-label="Connect wallet"
             >
               <IconWallet className="w-3.5 h-3.5 text-[#6d6499]" />
               <span className="hidden sm:inline text-xs font-mono font-bold text-[#6d6499]">
