@@ -20,14 +20,18 @@ export function WalletModal({ isOpen, onClose }) {
     tokenBalance,
     isConnecting,
     connectWallet,
+    disconnectWallet,
     switchToMSTNetwork,
     claimRewardOnChain,
-    contractsConfig
+    contractsConfig,
+    providers,
+    activeWalletId
   } = useWeb3();
 
   const [pendingVouchers, setPendingVouchers] = useState([]);
   const [claimingId, setClaimingId] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
     async function loadPending() {
@@ -139,8 +143,15 @@ export function WalletModal({ isOpen, onClose }) {
               <span className="text-xs text-[#6d6499] font-bold uppercase tracking-wider">
                 Connected Address
               </span>
-              <div className="px-2 py-0.5 border border-[#17985d] text-xs text-[#ffffff]">
-                {account.slice(0, 6)}...{account.slice(-4)}
+              <div className="flex items-center gap-2">
+                <div className="px-2 py-0.5 border border-[#17985d] text-xs text-[#ffffff]">
+                  {account.slice(0, 6)}...{account.slice(-4)}
+                </div>
+                {activeWalletId && (
+                  <span className="text-[10px] text-[#17985d] uppercase">
+                    {providers.find(p => p.id === activeWalletId)?.name || activeWalletId}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -166,7 +177,7 @@ export function WalletModal({ isOpen, onClose }) {
             )}
 
             {/* Balances */}
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#17985d]/30">
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#17985d]/30 mb-3">
               <div>
                 <span className="text-[10px] text-[#6d6499] font-bold uppercase block">
                   Gas Token (tMSTC)
@@ -180,20 +191,80 @@ export function WalletModal({ isOpen, onClose }) {
                 <div className="text-base sm:text-lg font-bold text-[#17985d]">{tokenBalance}</div>
               </div>
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {providers.length > 0 && (
+                <>
+                  {providers.map((p) => (
+                    <button
+                      key={p.id}
+                      disabled={switching || isConnecting || p.id === activeWalletId}
+                      onClick={async () => {
+                        setSwitching(true);
+                        setFeedback(null);
+                        try {
+                          await connectWallet(p);
+                        } catch (e) {
+                          setFeedback({ type: 'error', message: e.message || 'Failed to switch wallet' });
+                        } finally {
+                          setSwitching(false);
+                        }
+                      }}
+                      className={`px-2 py-1 text-[10px] uppercase border ${p.id === activeWalletId ? 'border-[#17985d] text-[#17985d]' : 'border-[#6d6499] text-[#6d6499] hover:border-[#17985d] hover:text-[#17985d]'}`}
+                    >
+                      {p.id === activeWalletId ? 'Active' : 'Switch'} {p.name}
+                    </button>
+                  ))}
+                </>
+              )}
+              <button
+                onClick={() => {
+                  disconnectWallet();
+                  setFeedback({ type: 'success', message: 'Wallet session disconnected from app' });
+                }}
+                className="px-2 py-1 text-[10px] uppercase border border-[#6d6499] text-[#6d6499] hover:border-[#17985d] hover:text-[#17985d]"
+              >
+                Disconnect
+              </button>
+            </div>
           </div>
         ) : (
           <div className="p-6 bg-[#0d1410] border border-[#17985d] text-center mb-6">
             <p className="text-xs text-[#d2fcf8]/80 mb-4">
-              Connect your MetaMask wallet to claim vouchers and transfer utility tokens on the MST Blockchain.
+              Connect your wallet to claim vouchers and transfer utility tokens on the MST Blockchain. Only one wallet can be active at a time.
             </p>
-            <button
-              onClick={connectWallet}
-              disabled={isConnecting}
-              className="py-2.5 px-6 bg-[#17985d] hover:bg-[#17985d]/90 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2"
-            >
-              <IconWallet className="w-4 h-4" />
-              <span>{isConnecting ? 'Connecting...' : 'Connect MetaMask'}</span>
-            </button>
+            {providers.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {providers.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={async () => {
+                      setFeedback(null);
+                      try {
+                        await connectWallet(p);
+                      } catch (e) {
+                        setFeedback({ type: 'error', message: e.message || 'Failed to connect' });
+                      }
+                    }}
+                    disabled={isConnecting}
+                    className="py-2.5 px-4 bg-[#0d1410] border border-[#17985d] hover:bg-[#17985d]/10 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2"
+                  >
+                    <IconWallet className="w-4 h-4" />
+                    <span>{isConnecting ? 'Connecting...' : `Connect ${p.name}`}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="py-2.5 px-6 bg-[#17985d] hover:bg-[#17985d]/90 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2"
+              >
+                <IconWallet className="w-4 h-4" />
+                <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+              </button>
+            )}
+            <p className="text-[10px] text-[#6d6499] mt-3">MetaMask, BridgeKey, or other injected wallets supported.</p>
           </div>
         )}
 

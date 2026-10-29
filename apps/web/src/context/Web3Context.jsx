@@ -26,7 +26,8 @@ export function Web3Provider({ children }) {
   const [providers, setProviders] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [selectedProviderId, setSelectedProviderId] = useState(null);
-  const listenersAttachedRef = useRef(false);
+  const [activeWalletId, setActiveWalletId] = useState(null);
+  const listenersRef = useRef({ accountsChanged: null, chainChanged: null, provider: null });
 
   useEffect(() => {
     async function loadConfig() {
@@ -105,7 +106,31 @@ export function Web3Provider({ children }) {
     return p?.provider || null;
   }, [selectedProvider, providers]);
 
+  const disconnectWallet = useCallback(() => {
+    try {
+      const p = listenersRef.current.provider;
+      if (p) {
+        if (listenersRef.current.accountsChanged) {
+          try { p.removeListener?.('accountsChanged', listenersRef.current.accountsChanged); } catch (e) {}
+        }
+        if (listenersRef.current.chainChanged) {
+          try { p.removeListener?.('chainChanged', listenersRef.current.chainChanged); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    listenersRef.current = { accountsChanged: null, chainChanged: null, provider: null };
+    setAccount(null);
+    setChainId(null);
+    setIsMSTNetwork(false);
+    setNativeBalance('0.0');
+    setTokenBalance('0.0');
+    setSelectedProvider(null);
+    setActiveWalletId(null);
+    setError(null);
+  }, []);
+
   const connectWallet = async (walletOption = null) => {
+    if (isConnecting) return;
     let providerInstance = walletOption?.provider || null;
     let providerId = walletOption?.id || null;
 
@@ -121,12 +146,18 @@ export function Web3Provider({ children }) {
       return;
     }
 
+    // Disconnect previous active wallet session before switching
+    if (selectedProvider && selectedProvider !== providerInstance) {
+      disconnectWallet();
+    }
+
     setIsConnecting(true);
     setError(null);
     try {
       const provider = new ethers.BrowserProvider(providerInstance);
       setSelectedProvider(providerInstance);
       setSelectedProviderId(providerId);
+      setActiveWalletId(providerId);
       setPreferredWalletId(providerId);
 
       const accounts = await provider.send('eth_requestAccounts', []);
@@ -157,6 +188,7 @@ export function Web3Provider({ children }) {
         }
       }
     } catch (err) {
+      disconnectWallet();
       setError(err.message || 'Failed to connect wallet');
     } finally {
       setIsConnecting(false);
@@ -275,7 +307,23 @@ export function Web3Provider({ children }) {
 
   useEffect(() => {
     const eth = getActiveProvider();
-    if (typeof window === 'undefined' || !eth || listenersAttachedRef.current) return;
+    if (typeof window === 'undefined' || !eth) return;
+
+    // Clean up previous listeners if switching providers
+    try {
+      const prevP = listenersRef.current.provider;
+      if (prevP && prevP !== eth) {
+        if (listenersRef.current.accountsChanged) {
+          try { prevP.removeListener?.('accountsChanged', listenersRef.current.accountsChanged); } catch (e) {}
+        }
+        if (listenersRef.current.chainChanged) {
+          try { prevP.removeListener?.('chainChanged', listenersRef.current.chainChanged); } catch (e) {}
+        }
+        listenersRef.current = { accountsChanged: null, chainChanged: null, provider: null };
+      }
+    } catch (e) {}
+
+    if (listenersRef.current.provider === eth) return;
 
     const handleAccountsChanged = (accounts) => {
       if (!accounts || accounts.length === 0) {
@@ -284,45 +332,57 @@ export function Web3Provider({ children }) {
         setTokenBalance('0.0');
         return;
       }
-      setAccount(accounts[0]);
+      const newAcc = accounts[0];
+      setAccount(newAcc);
       try {
         const provider = new ethers.BrowserProvider(eth);
-        loadBalances(accounts[0], provider);
+        loadBalances(newAcc, provider);
       } catch (e) {
         console.warn(e.message);
       }
     };
 
     const handleChainChanged = (chainIdHex) => {
-      const newChainId = parseInt(chainIdHex, 16);
-      setChainId(newChainId);
-      checkNetwork(newChainId);
-      if (account) {
-        try {
-          const provider = new ethers.BrowserProvider(eth);
-          loadBalances(account, provider);
-        } catch (e) {
-          console.warn(e.message);
+      try {
+        const newChainId = parseInt(chainIdHex, 16);
+        setChainId(newChainId);
+        checkNetwork(newChainId);
+        const currentAcc = account;
+        if (currentAcc) {
+          try {
+            const provider = new ethers.BrowserProvider(eth);
+            loadBalances(currentAcc, provider);
+          } catch (e) {
+            console.warn(e.message);
+          }
         }
+      } catch (e) {
+        console.warn(e.message);
       }
     };
 
     try {
       eth.on?.('accountsChanged', handleAccountsChanged);
       eth.on?.('chainChanged', handleChainChanged);
-      listenersAttachedRef.current = true;
+      listenersRef.current = { accountsChanged: handleAccountsChanged, chainChanged: handleChainChanged, provider: eth };
     } catch (e) {
       console.warn(e.message);
     }
 
     return () => {
       try {
-        eth.removeListener?.('accountsChanged', handleAccountsChanged);
-        eth.removeListener?.('chainChanged', handleChainChanged);
+        if (listenersRef.current.provider === eth) {
+          if (listenersRef.current.accountsChanged) {
+            try { eth.removeListener?.('accountsChanged', listenersRef.current.accountsChanged); } catch (e) {}
+          }
+          if (listenersRef.current.chainChanged) {
+            try { eth.removeListener?.('chainChanged', listenersRef.current.chainChanged); } catch (e) {}
+          }
+          listenersRef.current = { accountsChanged: null, chainChanged: null, provider: null };
+        }
       } catch (e) {}
-      listenersAttachedRef.current = false;
     };
-  }, [selectedProvider, providers, account, loadBalances, checkNetwork, getActiveProvider]);
+  }, [selectedProvider, account, loadBalances, checkNetwork, getActiveProvider]);
 
   const value = {
     account,
@@ -335,6 +395,7 @@ export function Web3Provider({ children }) {
     setError,
     contractsConfig,
     connectWallet,
+    disconnectWallet,
     switchToMSTNetwork,
     claimRewardOnChain,
     purchaseStoreItemOnChain,
@@ -352,7 +413,9 @@ export function Web3Provider({ children }) {
     },
     providers,
     discoverWalletProviders,
-    selectedProviderId
+    selectedProviderId,
+    activeWalletId,
+    getActiveProvider
   };
 
   return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
