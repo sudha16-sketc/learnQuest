@@ -44,19 +44,29 @@ export function Web3Provider({ children }) {
 
   useEffect(() => {
     let mounted = true;
-    discoverWalletProviders().then((list) => {
+    let debounceTimer = null;
+    discoverWalletProviders({ force: true }).then((list) => {
       if (mounted) setProviders(list);
-    });
+    }).catch(() => {});
+
     if (typeof window !== 'undefined') {
       const handler = () => {
-        discoverWalletProviders().then((list) => {
-          if (mounted) setProviders(list);
-        });
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          discoverWalletProviders().then((list) => {
+            if (mounted) setProviders(list);
+          }).catch(() => {});
+        }, 150);
       };
-      window.addEventListener('eip6963:announceProvider', handler);
+      try {
+        window.addEventListener('eip6963:announceProvider', handler);
+      } catch (e) {}
       return () => {
         mounted = false;
-        window.removeEventListener('eip6963:announceProvider', handler);
+        if (debounceTimer) clearTimeout(debounceTimer);
+        try {
+          window.removeEventListener('eip6963:announceProvider', handler);
+        } catch (e) {}
       };
     }
     return () => { mounted = false; };
