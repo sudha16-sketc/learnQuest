@@ -46,17 +46,23 @@ export function Web3Provider({ children }) {
   useEffect(() => {
     let mounted = true;
     let debounceTimer = null;
-    discoverWalletProviders({ force: true }).then((list) => {
-      if (mounted) setProviders(list);
-    }).catch(() => {});
+    discoverWalletProviders({ force: true })
+      .then((list) => {
+        if (mounted && Array.isArray(list)) setProviders(list);
+      })
+      .catch(() => {
+        if (mounted) setProviders([]);
+      });
 
     if (typeof window !== 'undefined') {
       const handler = () => {
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-          discoverWalletProviders().then((list) => {
-            if (mounted) setProviders(list);
-          }).catch(() => {});
+          discoverWalletProviders()
+            .then((list) => {
+              if (mounted && Array.isArray(list)) setProviders(list);
+            })
+            .catch(() => {});
         }, 150);
       };
       try {

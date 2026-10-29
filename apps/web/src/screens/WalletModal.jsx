@@ -247,7 +247,7 @@ export function WalletModal({ isOpen, onClose }) {
                       }
                     }}
                     disabled={isConnecting}
-                    className="py-2.5 px-4 bg-[#0d1410] border border-[#17985d] hover:bg-[#17985d]/10 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2"
+                    className="py-2.5 px-4 bg-[#0d1410] border border-[#17985d] hover:bg-[#17985d]/10 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2 disabled:opacity-60"
                   >
                     <IconWallet className="w-4 h-4" />
                     <span>{isConnecting ? 'Connecting...' : `Connect ${p.name}`}</span>
@@ -255,14 +255,10 @@ export function WalletModal({ isOpen, onClose }) {
                 ))}
               </div>
             ) : (
-              <button
-                onClick={connectWallet}
-                disabled={isConnecting}
-                className="py-2.5 px-6 bg-[#17985d] hover:bg-[#17985d]/90 text-[#ffffff] font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2"
-              >
-                <IconWallet className="w-4 h-4" />
-                <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
-              </button>
+              <div className="p-3 border border-[#6d6499] text-xs text-[#6d6499]">
+                <p className="font-bold uppercase">No compatible wallets detected</p>
+                <p className="mt-1 text-[#d2fcf8]/70">Install MetaMask, BridgeKey, or another EIP-1193 compatible wallet and refresh the page.</p>
+              </div>
             )}
             <p className="text-[10px] text-[#6d6499] mt-3">MetaMask, BridgeKey, or other injected wallets supported.</p>
           </div>
