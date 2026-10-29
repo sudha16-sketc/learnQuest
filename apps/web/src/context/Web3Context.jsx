@@ -9,7 +9,7 @@ import {
 } from '@learnquest/contracts-client';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
-import { discoverWalletProviders, getPreferredWalletId, setPreferredWalletId, getProviderById } from '../utils/walletProviders';
+import { discoverWalletProviders, getPreferredWalletId, setPreferredWalletId } from '../utils/walletProviders';
 
 const Web3Context = createContext(null);
 
@@ -27,7 +27,9 @@ export function Web3Provider({ children }) {
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [selectedProviderId, setSelectedProviderId] = useState(null);
   const [activeWalletId, setActiveWalletId] = useState(null);
+  const [discoveryStatus, setDiscoveryStatus] = useState('idle'); // idle | discovering | ready
   const listenersRef = useRef({ accountsChanged: null, chainChanged: null, provider: null });
+  const connectingRef = useRef(false);
 
   useEffect(() => {
     async function loadConfig() {
@@ -46,12 +48,17 @@ export function Web3Provider({ children }) {
   useEffect(() => {
     let mounted = true;
     let debounceTimer = null;
+    setDiscoveryStatus('discovering');
     discoverWalletProviders({ force: true })
       .then((list) => {
-        if (mounted && Array.isArray(list)) setProviders(list);
+        if (!mounted) return;
+        setProviders(Array.isArray(list) ? list : []);
+        setDiscoveryStatus('ready');
       })
       .catch(() => {
-        if (mounted) setProviders([]);
+        if (!mounted) return;
+        setProviders([]);
+        setDiscoveryStatus('ready');
       });
 
     if (typeof window !== 'undefined') {
@@ -60,10 +67,23 @@ export function Web3Provider({ children }) {
         debounceTimer = setTimeout(() => {
           discoverWalletProviders()
             .then((list) => {
-              if (mounted && Array.isArray(list)) setProviders(list);
+              if (mounted && Array.isArray(list)) {
+                setProviders((prev) => {
+                  const combined = [...(prev || []), ...(list || [])];
+                  const seen = new Set();
+                  const out = [];
+                  for (const p of combined) {
+                    if (p?.provider && !seen.has(p.provider)) {
+                      seen.add(p.provider);
+                      out.push(p);
+                    }
+                  }
+                  return out;
+                });
+              }
             })
             .catch(() => {});
-        }, 150);
+        }, 200);
       };
       try {
         window.addEventListener('eip6963:announceProvider', handler);
@@ -129,35 +149,46 @@ export function Web3Provider({ children }) {
     setNativeBalance('0.0');
     setTokenBalance('0.0');
     setSelectedProvider(null);
+    setSelectedProviderId(null);
     setActiveWalletId(null);
     setError(null);
   }, []);
 
   const connectWallet = async (walletOption = null) => {
-    if (isConnecting) return;
-    let providerInstance = walletOption?.provider || null;
-    let providerId = walletOption?.id || null;
-
-    if (!providerInstance) {
-      const preferred = getPreferredWalletId();
-      const preferredProv = getProviderById(providers, preferred);
-      providerInstance = preferredProv?.provider || providers[0]?.provider || null;
-      providerId = preferredProv?.id || providers[0]?.id || null;
-    }
-
-    if (!providerInstance) {
-      setError('No wallet detected. Install BridgeKey or MetaMask and try again.');
-      return;
-    }
-
-    // Disconnect previous active wallet session before switching
-    if (selectedProvider && selectedProvider !== providerInstance) {
-      disconnectWallet();
-    }
-
+    if (connectingRef.current || isConnecting) return;
+    connectingRef.current = true;
     setIsConnecting(true);
     setError(null);
+
     try {
+      let providerInstance = walletOption?.provider || null;
+      let providerId = walletOption?.id || null;
+
+      if (!providerInstance && Array.isArray(providers) && providers.length > 0) {
+        providerInstance = providers[0].provider;
+        providerId = providers[0].id;
+      }
+
+      if (!providerInstance) {
+        setError('No wallet provider available. Please install a compatible wallet.');
+        return;
+      }
+
+      if (selectedProvider && selectedProvider !== providerInstance) {
+        try {
+          const prevP = listenersRef.current.provider;
+          if (prevP) {
+            if (listenersRef.current.accountsChanged) {
+              try { prevP.removeListener?.('accountsChanged', listenersRef.current.accountsChanged); } catch (e) {}
+            }
+            if (listenersRef.current.chainChanged) {
+              try { prevP.removeListener?.('chainChanged', listenersRef.current.chainChanged); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+        listenersRef.current = { accountsChanged: null, chainChanged: null, provider: null };
+      }
+
       const provider = new ethers.BrowserProvider(providerInstance);
       setSelectedProvider(providerInstance);
       setSelectedProviderId(providerId);
@@ -167,7 +198,10 @@ export function Web3Provider({ children }) {
       const accounts = await provider.send('eth_requestAccounts', []);
       const network = await provider.getNetwork();
 
-      const selectedAccount = accounts[0];
+      const selectedAccount = accounts?.[0];
+      if (!selectedAccount) {
+        throw new Error('No accounts returned by wallet');
+      }
       setAccount(selectedAccount);
       setChainId(Number(network.chainId));
 
@@ -192,9 +226,9 @@ export function Web3Provider({ children }) {
         }
       }
     } catch (err) {
-      disconnectWallet();
-      setError(err.message || 'Failed to connect wallet');
+      setError(err?.message || 'Failed to connect wallet');
     } finally {
+      connectingRef.current = false;
       setIsConnecting(false);
     }
   };
@@ -313,7 +347,6 @@ export function Web3Provider({ children }) {
     const eth = getActiveProvider();
     if (typeof window === 'undefined' || !eth) return;
 
-    // Clean up previous listeners if switching providers
     try {
       const prevP = listenersRef.current.provider;
       if (prevP && prevP !== eth) {
@@ -351,11 +384,10 @@ export function Web3Provider({ children }) {
         const newChainId = parseInt(chainIdHex, 16);
         setChainId(newChainId);
         checkNetwork(newChainId);
-        const currentAcc = account;
-        if (currentAcc) {
+        if (account) {
           try {
             const provider = new ethers.BrowserProvider(eth);
-            loadBalances(currentAcc, provider);
+            loadBalances(account, provider);
           } catch (e) {
             console.warn(e.message);
           }
@@ -416,9 +448,9 @@ export function Web3Provider({ children }) {
       }
     },
     providers,
-    discoverWalletProviders,
-    selectedProviderId,
+    discoveryStatus,
     activeWalletId,
+    selectedProviderId,
     getActiveProvider
   };
 

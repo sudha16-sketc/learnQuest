@@ -25,7 +25,9 @@ export function WalletModal({ isOpen, onClose }) {
     claimRewardOnChain,
     contractsConfig,
     providers,
-    activeWalletId
+    activeWalletId,
+    discoveryStatus,
+    error
   } = useWeb3();
 
   const [pendingVouchers, setPendingVouchers] = useState([]);
@@ -195,26 +197,27 @@ export function WalletModal({ isOpen, onClose }) {
             <div className="flex flex-wrap items-center gap-2">
               {providers.length > 0 && (
                 <>
-                  {providers.map((p) => (
-                    <button
-                      key={p.id}
-                      disabled={switching || isConnecting || p.id === activeWalletId}
-                      onClick={async () => {
-                        setSwitching(true);
-                        setFeedback(null);
-                        try {
-                          await connectWallet(p);
-                        } catch (e) {
-                          setFeedback({ type: 'error', message: e.message || 'Failed to switch wallet' });
-                        } finally {
-                          setSwitching(false);
-                        }
-                      }}
-                      className={`px-2 py-1 text-[10px] uppercase border ${p.id === activeWalletId ? 'border-[#17985d] text-[#17985d]' : 'border-[#6d6499] text-[#6d6499] hover:border-[#17985d] hover:text-[#17985d]'}`}
-                    >
-                      {p.id === activeWalletId ? 'Active' : 'Switch'} {p.name}
-                    </button>
-                  ))}
+              {providers.map((p) => (
+                <button
+                  key={p.id}
+                  disabled={switching || isConnecting || p.id === activeWalletId}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setSwitching(true);
+                    setFeedback(null);
+                    try {
+                      await connectWallet(p);
+                    } catch (e2) {
+                      setFeedback({ type: 'error', message: e2?.message || 'Failed to switch wallet' });
+                    } finally {
+                      setSwitching(false);
+                    }
+                  }}
+                  className={`px-2 py-1 text-[10px] uppercase border disabled:opacity-60 ${p.id === activeWalletId ? 'border-[#17985d] text-[#17985d]' : 'border-[#6d6499] text-[#6d6499] hover:border-[#17985d] hover:text-[#17985d]'}`}
+                >
+                  {p.id === activeWalletId ? 'Active' : 'Switch'} {p.name}
+                </button>
+              ))}
                 </>
               )}
               <button
@@ -233,17 +236,23 @@ export function WalletModal({ isOpen, onClose }) {
             <p className="text-xs text-[#d2fcf8]/80 mb-4">
               Connect your wallet to claim vouchers and transfer utility tokens on the MST Blockchain. Only one wallet can be active at a time.
             </p>
-            {providers.length > 0 ? (
+            {discoveryStatus === 'discovering' ? (
+              <div className="py-2.5 px-4 border border-[#17985d] text-xs text-[#d2fcf8]/70 inline-flex items-center gap-2">
+                <IconLoader className="w-4 h-4 animate-spin text-[#17985d]" />
+                <span>Scanning for wallets...</span>
+              </div>
+            ) : providers.length > 0 ? (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {providers.map((p) => (
                   <button
                     key={p.id}
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.preventDefault();
                       setFeedback(null);
                       try {
                         await connectWallet(p);
-                      } catch (e) {
-                        setFeedback({ type: 'error', message: e.message || 'Failed to connect' });
+                      } catch (e2) {
+                        setFeedback({ type: 'error', message: e2?.message || 'Failed to connect' });
                       }
                     }}
                     disabled={isConnecting}
@@ -258,6 +267,11 @@ export function WalletModal({ isOpen, onClose }) {
               <div className="p-3 border border-[#6d6499] text-xs text-[#6d6499]">
                 <p className="font-bold uppercase">No compatible wallets detected</p>
                 <p className="mt-1 text-[#d2fcf8]/70">Install MetaMask, BridgeKey, or another EIP-1193 compatible wallet and refresh the page.</p>
+              </div>
+            )}
+            {(error || feedback) && (
+              <div className="mt-3 p-2 border border-[#6d6499] text-[10px] text-[#6d6499] text-left">
+                {error || feedback?.message}
               </div>
             )}
             <p className="text-[10px] text-[#6d6499] mt-3">MetaMask, BridgeKey, or other injected wallets supported.</p>
