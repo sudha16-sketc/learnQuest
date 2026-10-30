@@ -14,6 +14,19 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true
+    host: true,
+    strictPort: true,
+    watch: {
+      // WSL/Windows-mounted drives do not emit inotify events reliably.
+      usePolling: true,
+      interval: 100,
+      ignored: ['**/node_modules/**', '**/dist/**']
+    },
+    hmr: {
+      overlay: true
+    }
+  },
+  optimizeDeps: {
+    force: false
   }
 });

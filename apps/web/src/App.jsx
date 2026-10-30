@@ -53,6 +53,8 @@ export function App() {
 
   // Load balances and equipped accessories
   const refreshUserData = async () => {
+    if (!user) return;
+
     try {
       const [balRes, storeRes] = await Promise.all([
         api.getRewardBalance().catch(() => null),
@@ -263,10 +265,17 @@ export function App() {
         onOpenWallet={() => setIsWalletOpen(true)}
         onOpenAchievements={() => setIsAchievementsOpen(true)}
         onOpenDashboard={() => setGameState(GAME_STATES.TOPIC_SELECTION)}
+        onLogoClick={
+          gameState === GAME_STATES.MENU
+            ? () => window.scrollTo({ top: 0, behavior: 'smooth' })
+            : undefined
+        }
         onOpenTOS={() => setLegalModalDoc('tos')}
         onOpenPrivacy={() => setLegalModalDoc('privacy')}
         gameplayXP={gameplayXP}
         pendingTokens={pendingTokens}
+        variant={gameState === GAME_STATES.MENU ? 'landing' : 'app'}
+        showSectionLinks={gameState === GAME_STATES.MENU}
       />
 
       {gameError && (

@@ -19,6 +19,7 @@ LearnQuest transforms computer science and blockchain education into an interact
 - **Dual-Token Reward Economy:** Clean separation between off-chain durable Gameplay XP and on-chain Utility Tokens (`LQST`), protected by cryptographic **EIP-712** signed reward vouchers.
 - **Cosmetics & Store:** Token-priced in-game store featuring Cyber Neon Auras, Cosmic Scholar Hats, and Stardust Jump Trails that visibly render on your 3D explorer.
 - **Web Platform:** React Web app with Express API backend powering gameplay, AI, rewards, and blockchain flows.
+- **Cinematic Landing:** Scroll-controlled 297-frame emerald wall-destruction sequence rendered on canvas with GSAP ScrollTrigger. See [`docs/CINEMATIC_LANDING.md`](docs/CINEMATIC_LANDING.md) for frame assets and replacement instructions.
 
 ---
 

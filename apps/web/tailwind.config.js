@@ -18,11 +18,21 @@ export default {
           card: '#0d1410',
           border: '#17985d',
           accent: '#17985d',
+        },
+        cinematic: {
+          bg: '#090807',
+          deep: '#17120E',
+          accent: '#B45309',
+          signal: '#FF7A18',
+          soft: '#FFD9A8',
+          text: '#FFF9F2',
+          muted: '#D0C4B6',
         }
       },
       fontFamily: {
         sans: ['"Cinzel Decorative"', 'serif', 'system-ui'],
         display: ['"Cinzel Decorative"', 'serif'],
+        body: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
       },
       borderRadius: {
