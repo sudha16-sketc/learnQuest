@@ -184,6 +184,13 @@ class ApiService {
     });
   }
 
+  async confirmRewardClaim(entitlementId, transactionHash) {
+    return this.request('/api/rewards/confirm-claim', {
+      method: 'POST',
+      body: JSON.stringify({ entitlementId, transactionHash })
+    });
+  }
+
   async getStoreItems() {
     return this.request('/api/store/items');
   }

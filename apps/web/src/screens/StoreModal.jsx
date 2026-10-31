@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { IconStore, IconX, IconCheck, IconLoader, IconCoins } from '../components/Icons';
 import { useWeb3 } from '../context/Web3Context';
 import { api } from '../services/api';
+import { getWalletErrorMessage, isWalletRefreshError } from '../utils/walletErrors';
 
 export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) {
   const { account, tokenBalance, purchaseStoreItemOnChain } = useWeb3();
@@ -38,7 +39,7 @@ export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) 
       console.error('Purchase error:', err);
       setFeedback({
         type: 'error',
-        message: err.message || 'On-chain purchase transaction failed.'
+        message: getWalletErrorMessage(err)
       });
     } finally {
       setPurchasingSku(null);
@@ -89,7 +90,15 @@ export function StoreModal({ isOpen, onClose, storeItems = [], onEquipChange }) 
                 : 'bg-[#0d1410] border-[#6d6499] text-[#6d6499]'
             }`}
           >
-            {feedback.message}
+            <p>{feedback.message}</p>
+            {isWalletRefreshError(feedback.message) && (
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 px-3 py-1.5 border border-[#17985d] text-[#17985d] text-[10px] uppercase tracking-wider hover:bg-[#17985d] hover:text-[#0d1410]"
+              >
+                Refresh Page
+              </button>
+            )}
           </div>
         )}
 

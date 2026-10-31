@@ -44,7 +44,7 @@ services:
       MST_CHAIN_ID: 91562037
       MST_RPC_URL: https://testnetrpc.mstblockchain.com
       MST_EXPLORER_URL: https://testnet.mstscan.com
-      REWARD_SIGNER_PRIVATE_KEY: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d
+      REWARD_SIGNER_PRIVATE_KEY: ${REWARD_SIGNER_PRIVATE_KEY:?Set REWARD_SIGNER_PRIVATE_KEY in .env}
     depends_on:
       postgres:
         condition: service_healthy

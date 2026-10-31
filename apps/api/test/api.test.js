@@ -6,6 +6,7 @@ import { ethers } from 'ethers';
 process.env.AI_PROVIDER = 'curated';
 process.env.GEMINI_API_KEY = '';
 process.env.NODE_ENV = 'test';
+process.env.REWARD_SIGNER_PRIVATE_KEY = ethers.Wallet.createRandom().privateKey;
 
 const { default: app } = await import('../src/index.js');
 const { aiService } = await import('../src/services/ai/index.js');
@@ -342,6 +343,31 @@ test('LearnQuest API integration tests (shared web/mobile contract)', async (t) 
     assert.equal(voucherRes.status, 200);
     assert.equal(voucherRes.body.voucher.user, wallet.address.toLowerCase());
     assert.ok(voucherRes.body.voucher.signature.startsWith('0x'));
+    assert.ok(BigInt(voucherRes.body.voucher.amount) > 0n);
+
+    const firstNonce = voucherRes.body.voucher.nonce;
+    const afterIssueRes = await request(app)
+      .get('/api/rewards/pending')
+      .set('Authorization', `Bearer ${authToken}`);
+    assert.equal(afterIssueRes.status, 200);
+    const issuedEntitlement = afterIssueRes.body.pending.find(p => p.id === entitlementId);
+    assert.ok(issuedEntitlement, 'issued voucher should remain pending until confirmed');
+    assert.equal(issuedEntitlement.status, 'VOUCHER_ISSUED');
+    assert.equal(issuedEntitlement.voucherNonce, String(firstNonce));
+    assert.equal(typeof issuedEntitlement.voucherNonce, 'string');
+
+    const retriedVoucherRes = await request(app)
+      .post('/api/rewards/claim-voucher')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ entitlementId });
+    assert.equal(retriedVoucherRes.status, 200);
+    assert.equal(retriedVoucherRes.body.voucher.nonce, firstNonce);
+
+    const invalidConfirmRes = await request(app)
+      .post('/api/rewards/confirm-claim')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ entitlementId, transactionHash: '0xnot-a-valid-transaction-hash' });
+    assert.equal(invalidConfirmRes.status, 400);
   });
 
   await t.test('GET /api/store/items returns catalog and auth is required', async () => {

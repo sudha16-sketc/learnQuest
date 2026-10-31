@@ -5,11 +5,13 @@ import {
   LearnQuestUtilityTokenABI,
   LearnQuestRewardsABI,
   LearnQuestGameStoreABI,
-  LearnQuestAchievementsABI
+  LearnQuestAchievementsABI,
+  verifyRewardVoucher
 } from '@learnquest/contracts-client';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
 import { discoverWalletProviders, getPreferredWalletId, setPreferredWalletId } from '../utils/walletProviders';
+import { getWalletErrorMessage } from '../utils/walletErrors';
 
 const Web3Context = createContext(null);
 
@@ -70,15 +72,12 @@ export function Web3Provider({ children }) {
               if (mounted && Array.isArray(list)) {
                 setProviders((prev) => {
                   const combined = [...(prev || []), ...(list || [])];
-                  const seen = new Set();
-                  const out = [];
+                  const byWallet = new Map();
                   for (const p of combined) {
-                    if (p?.provider && !seen.has(p.provider)) {
-                      seen.add(p.provider);
-                      out.push(p);
-                    }
+                    if (!p?.provider) continue;
+                    byWallet.set(p.id || p.rdns || p.name, p);
                   }
-                  return out;
+                  return Array.from(byWallet.values());
                 });
               }
             })
@@ -226,7 +225,7 @@ export function Web3Provider({ children }) {
         }
       }
     } catch (err) {
-      setError(err?.message || 'Failed to connect wallet');
+      setError(getWalletErrorMessage(err));
     } finally {
       connectingRef.current = false;
       setIsConnecting(false);
@@ -264,10 +263,10 @@ export function Web3Provider({ children }) {
           });
           setIsMSTNetwork(true);
         } catch (addError) {
-          setError(`Failed to add MST Network: ${addError.message}`);
+          setError(`Failed to add MST Network: ${getWalletErrorMessage(addError)}`);
         }
       } else {
-        setError(`Failed to switch network: ${switchError.message}`);
+        setError(`Failed to switch network: ${getWalletErrorMessage(switchError)}`);
       }
     }
   };
@@ -277,13 +276,76 @@ export function Web3Provider({ children }) {
     if (!eth || !account) {
       throw new Error('Please connect your wallet first');
     }
+    if (!voucherData?.signature) {
+      throw new Error('The reward voucher is missing its signature');
+    }
+
+    const rewardsAddress = contractsConfig?.contracts?.rewards;
+    if (!rewardsAddress || !ethers.isAddress(rewardsAddress)) {
+      throw new Error('The rewards contract address is not configured. Refresh the page and try again.');
+    }
+    if (!isMSTNetwork) {
+      throw new Error('Switch to MST Testnet before claiming rewards');
+    }
+    if (voucherData.user.toLowerCase() !== account.toLowerCase()) {
+      throw new Error(
+        `Voucher recipient ${voucherData.user} does not match the connected wallet ${account}. ` +
+        'Link the connected wallet to your account before claiming.'
+      );
+    }
+    if (Number(voucherData.chainId) !== Number(chainId)) {
+      throw new Error(
+        `Voucher chain ID ${voucherData.chainId} does not match the wallet chain ID ${chainId}`
+      );
+    }
+    if (
+      voucherData.rewardsContractAddress &&
+      voucherData.rewardsContractAddress.toLowerCase() !== rewardsAddress.toLowerCase()
+    ) {
+      throw new Error(
+        `Voucher targets ${voucherData.rewardsContractAddress}, but the app is configured for ${rewardsAddress}`
+      );
+    }
+
     const provider = new ethers.BrowserProvider(eth);
     const signer = await provider.getSigner();
-    const rewardsContract = new ethers.Contract(
-      contractsConfig?.contracts?.rewards || MST_NETWORKS.TESTNET,
-      LearnQuestRewardsABI,
-      signer
-    );
+
+    const code = await provider.getCode(rewardsAddress);
+    if (!code || code === '0x') {
+      throw new Error(
+        `No rewards contract exists at ${rewardsAddress} on chain ${chainId}. ` +
+        'Check MST_REWARDS_ADDRESS in the API environment.'
+      );
+    }
+
+    const rewardsContract = new ethers.Contract(rewardsAddress, LearnQuestRewardsABI, signer);
+    const onChainSigner = await rewardsContract.signerAddress();
+    const recoveredSigner = verifyRewardVoucher({
+      chainId: voucherData.chainId,
+      rewardsContractAddress: rewardsAddress,
+      voucher: {
+        user: voucherData.user,
+        amount: BigInt(voucherData.amount),
+        nonce: BigInt(voucherData.nonce),
+        expiry: BigInt(voucherData.expiry),
+        reason: voucherData.reason
+      },
+      signature: voucherData.signature
+    });
+
+    if (recoveredSigner.toLowerCase() !== onChainSigner.toLowerCase()) {
+      throw new Error(
+        `Voucher signer mismatch: the backend signed with ${recoveredSigner}, but the rewards contract ` +
+        `only accepts ${onChainSigner}. Set REWARD_SIGNER_PRIVATE_KEY to the authorized signer or update ` +
+        'the signer on the rewards contract.'
+      );
+    }
+
+    const nonceUsed = await rewardsContract.isNonceUsed(voucherData.user, voucherData.nonce);
+    if (nonceUsed) {
+      throw new Error('This reward has already been claimed on-chain');
+    }
+
     const tx = await rewardsContract.claimReward(
       voucherData.user,
       voucherData.amount,
@@ -293,6 +355,29 @@ export function Web3Provider({ children }) {
       voucherData.signature
     );
     const receipt = await tx.wait();
+
+    const rewardsInterface = new ethers.Interface(LearnQuestRewardsABI);
+    let rewardClaimed = false;
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== rewardsAddress.toLowerCase()) continue;
+      try {
+        const parsed = rewardsInterface.parseLog({ topics: log.topics, data: log.data });
+        if (parsed?.name === 'RewardClaimed') {
+          rewardClaimed = true;
+          break;
+        }
+      } catch (e) {
+        // Ignore unrelated logs.
+      }
+    }
+
+    if (!rewardClaimed) {
+      throw new Error(
+        'The transaction confirmed but did not emit a RewardClaimed event. No LQST was minted. ' +
+        'Verify MST_REWARDS_ADDRESS points at the deployed LearnQuestRewards contract.'
+      );
+    }
+
     await loadBalances(account, provider);
     return receipt;
   };

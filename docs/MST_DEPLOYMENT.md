@@ -15,6 +15,13 @@
 | LearnQuestGameStore | 0xfF169521b09f77e7867B857511E79695C47348db | https://testnet.mstscan.com/address/0xfF169521b09f77e7867B857511E79695C47348db |
 | LearnQuestAchievements | 0x14d2f7Ca4AD3725E384efD83DC0C598716b05B4C | https://testnet.mstscan.com/address/0x14d2f7Ca4AD3725E384efD83DC0C598716b05B4C |
 
+### Reward Signer
+- **Owner:** 0x0E370085799a51a1e437D34F5385032B2fBCeAA9
+- **On-chain signer before authorization:** 0x0E370085799a51a1e437D34F5385032B2fBCeAA9
+- **Dedicated API operator:** 0x41C99d85221205627AEE2338B491c279d20ee429
+- Owner must call `setSignerAddress(0x41C99d85221205627AEE2338B491c279d20ee429)` on LearnQuestRewards.
+- The API's local `.env` must contain the private key for this operator. Never commit it.
+
 ### RECORDER_ROLE
 - Granted to deployer (0x0E370085799a51a1e437D34F5385032B2fBCeAA9) on LearnQuestAchievements
 - Verified via `hasRole(RECORDER_ROLE, deployer)` = true

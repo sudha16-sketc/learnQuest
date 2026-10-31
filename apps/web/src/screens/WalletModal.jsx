@@ -10,6 +10,7 @@ import {
 } from '../components/Icons';
 import { useWeb3 } from '../context/Web3Context';
 import { api } from '../services/api';
+import { getWalletErrorMessage, isWalletRefreshError } from '../utils/walletErrors';
 
 export function WalletModal({ isOpen, onClose }) {
   const {
@@ -23,6 +24,7 @@ export function WalletModal({ isOpen, onClose }) {
     disconnectWallet,
     switchToMSTNetwork,
     claimRewardOnChain,
+    refreshBalances,
     contractsConfig,
     providers,
     activeWalletId,
@@ -60,12 +62,30 @@ export function WalletModal({ isOpen, onClose }) {
     try {
       // 1. Get signed voucher from backend
       const res = await api.claimRewardVoucher(entitlementId);
+
+      if (res.alreadyClaimed) {
+        setPendingVouchers(prev => prev.filter(p => p.id !== entitlementId));
+        refreshBalances();
+        setFeedback({
+          type: 'success',
+          message: res.message || 'This reward was already claimed on-chain.'
+        });
+        return;
+      }
+
       if (!res.success || !res.voucher) {
         throw new Error(res.error || 'Failed to generate signed voucher');
       }
 
       // 2. Submit claim transaction on MST
       const receipt = await claimRewardOnChain(res.voucher);
+
+      // 3. Persist the verified claim server-side
+      try {
+        await api.confirmRewardClaim(entitlementId, receipt.hash);
+      } catch (confirmErr) {
+        console.warn('On-chain claim succeeded but server confirmation failed:', confirmErr.message);
+      }
 
       setFeedback({
         type: 'success',
@@ -75,12 +95,22 @@ export function WalletModal({ isOpen, onClose }) {
 
       // Remove claimed from pending list
       setPendingVouchers(prev => prev.filter(p => p.id !== entitlementId));
+      refreshBalances();
     } catch (err) {
       console.error('Claim error:', err);
       setFeedback({
         type: 'error',
-        message: err.message || 'Reward claim transaction failed'
+        message: getWalletErrorMessage(err)
       });
+
+      try {
+        const refreshed = await api.getPendingRewards();
+        if (refreshed.success) {
+          setPendingVouchers(refreshed.pending || []);
+        }
+      } catch (refreshErr) {
+        console.warn('Could not refresh pending rewards:', refreshErr.message);
+      }
     } finally {
       setClaimingId(null);
     }
@@ -134,6 +164,14 @@ export function WalletModal({ isOpen, onClose }) {
                 <span>Explorer Link: {feedback.txHash.slice(0, 14)}...</span>
                 <IconExternalLink className="w-3 h-3" />
               </a>
+            )}
+            {isWalletRefreshError(feedback.message) && (
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-3 px-3 py-1.5 border border-[#17985d] text-[#17985d] text-[10px] uppercase tracking-wider hover:bg-[#17985d] hover:text-[#0d1410]"
+              >
+                Refresh Page
+              </button>
             )}
           </div>
         )}
@@ -272,6 +310,14 @@ export function WalletModal({ isOpen, onClose }) {
             {(error || feedback) && (
               <div className="mt-3 p-2 border border-[#6d6499] text-[10px] text-[#6d6499] text-left">
                 {error || feedback?.message}
+                {isWalletRefreshError(error) && (
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="block mt-2 px-3 py-1.5 border border-[#17985d] text-[#17985d] text-[10px] uppercase tracking-wider hover:bg-[#17985d] hover:text-[#0d1410]"
+                  >
+                    Refresh Page
+                  </button>
+                )}
               </div>
             )}
             <p className="text-[10px] text-[#6d6499] mt-3">MetaMask, BridgeKey, or other injected wallets supported.</p>

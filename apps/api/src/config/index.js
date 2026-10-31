@@ -10,6 +10,8 @@ const rootDir = path.resolve(__dirname, '../../../..');
 dotenv.config({ path: path.join(rootDir, '.env') });
 dotenv.config({ path: path.join(rootDir, '.env.local'), override: true });
 
+import { ethers } from 'ethers';
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '4000', 10),
@@ -34,11 +36,11 @@ export const config = {
     rpcUrl: process.env.MST_RPC_URL || 'https://testnetrpc.mstblockchain.com',
     explorerUrl: process.env.MST_EXPLORER_URL || 'https://testnet.mstscan.com',
     currencySymbol: process.env.MST_CURRENCY_SYMBOL || 'tMSTC',
-    rewardSignerPrivateKey: process.env.REWARD_SIGNER_PRIVATE_KEY || '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
-    tokenAddress: process.env.MST_TOKEN_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-    rewardsAddress: process.env.MST_REWARDS_ADDRESS || '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-    storeAddress: process.env.MST_STORE_ADDRESS || '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
-    achievementsAddress: process.env.MST_ACHIEVEMENTS_ADDRESS || '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-    treasuryAddress: process.env.MST_TREASURY_ADDRESS || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'
+    rewardSignerPrivateKey: process.env.REWARD_SIGNER_PRIVATE_KEY || '',
+    tokenAddress: process.env.MST_TOKEN_ADDRESS || '0x51825657e00622B538B920551aE845F3f95faC95',
+    rewardsAddress: process.env.MST_REWARDS_ADDRESS || '0xBA1969Ff27F0e2cBD443B817f9d4c7b7d8449314',
+    storeAddress: process.env.MST_STORE_ADDRESS || '0xfF169521b09f77e7867B857511E79695C47348db',
+    achievementsAddress: process.env.MST_ACHIEVEMENTS_ADDRESS || '0x14d2f7Ca4AD3725E384efD83DC0C598716b05B4C',
+    treasuryAddress: process.env.MST_TREASURY_ADDRESS || '0x0E370085799a51a1e437D34F5385032B2fBCeAA9'
   }
 };

@@ -108,7 +108,13 @@ export async function discoverWalletProviders({ force = false } = {}) {
     lastDiscoveryAt = Date.now();
   }
 
-  return providers;
+  const byWallet = new Map();
+  for (const provider of providers) {
+    if (provider?.provider) {
+      byWallet.set(provider.id || provider.rdns || provider.name, provider);
+    }
+  }
+  return Array.from(byWallet.values());
 }
 
 export function getPreferredWalletId() {

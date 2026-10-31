@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GameCanvas } from './game/GameCanvas';
+import { MobileControls } from './game/MobileControls';
 import { Navbar } from './components/Navbar';
 import { HUD } from './components/HUD';
 import { QuestionOverlay } from './components/QuestionOverlay';
@@ -324,8 +325,7 @@ export function App() {
             onFallRespawn={handleFallRespawn}
             equippedAccessories={equippedAccessories}
           />
-
-
+          <MobileControls />
         </>
       )}
 

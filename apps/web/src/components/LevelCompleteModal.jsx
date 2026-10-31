@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { IconTrophy, IconCoins, IconArrowRight, IconCheckCircle, IconExternalLink, IconLoader } from './Icons';
 import { useWeb3 } from '../context/Web3Context';
 import { api } from '../services/api';
+import { getWalletErrorMessage, isWalletRefreshError } from '../utils/walletErrors';
 
 export function LevelCompleteModal({
   levelNumber,
@@ -34,10 +35,18 @@ export function LevelCompleteModal({
 
       // 2. Submit on-chain claim transaction via MetaMask
       const receipt = await claimRewardOnChain(res.voucher);
+
+      // 3. Persist the verified claim server-side
+      try {
+        await api.confirmRewardClaim(entitlementId, receipt.hash);
+      } catch (confirmErr) {
+        console.warn('On-chain claim succeeded but server confirmation failed:', confirmErr.message);
+      }
+
       setClaimReceipt(receipt);
     } catch (err) {
       console.error('Claim error:', err);
-      setClaimError(err.message || 'On-chain claim failed');
+      setClaimError(getWalletErrorMessage(err));
     } finally {
       setIsClaiming(false);
     }
@@ -119,9 +128,17 @@ export function LevelCompleteModal({
               )}
             </button>
             {claimError && (
-              <p className="text-xs text-[#6d6499] mt-2 text-left bg-[#0d1410] p-2 border border-[#6d6499]">
-                {claimError}
-              </p>
+              <div className="text-xs text-[#6d6499] mt-2 text-left bg-[#0d1410] p-2 border border-[#6d6499]">
+                <p>{claimError}</p>
+                {isWalletRefreshError(claimError) && (
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-2 px-3 py-1.5 border border-[#17985d] text-[#17985d] text-[10px] uppercase tracking-wider hover:bg-[#17985d] hover:text-[#0d1410]"
+                  >
+                    Refresh Page
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
